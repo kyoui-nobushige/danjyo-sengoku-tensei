@@ -1,0 +1,119 @@
+{
+  "title": "桶狭間 ─ 永禄三年（1560）東海",
+  "description": "永禄三年（1560）五月、今川義元は二万五千の大軍を率いて西へ向かった。尾張の織田信長はわずか二千。東海の覇権を握るのは誰か――この乱世に転生したあなたはいかなる立場で歴史に挑むか。",
+  "year": 1560,
+  "month": 5,
+  "player_id": "yoshimoto",
+  "win_condition": {
+    "type": "defeat_or_subjugate_all",
+    "targets": ["nobunaga"]
+  },
+  "win_message": "織田信長を打ち破り、天下への道が開かれた！\n今川義元、上洛の夢に向けて大きく前進する。",
+  "lose_message": "今川家は滅亡した。\n歴史の歯車は変わらず、義元の夢は潰えた。",
+  "external_powers": [],
+  "events": [],
+  "warlords": [
+    {
+      "id": "yoshimoto",
+      "name": "今川義元",
+      "faction_name": "今川家",
+      "is_player": true,
+      "warlord_type": "daimyo",
+      "intelligence": 75,
+      "military": 70,
+      "charisma": 80,
+      "prestige": 85,
+      "relations": [
+        {"target": "nobunaga",  "value": -60},
+        {"target": "yoshitatsu","value": -10}
+      ],
+      "start_hint": "永禄三年五月十九日――史実ではこの日、義元は桶狭間で討たれる。\n大軍の油断が命取りだ。信長は正面から来ない。側面・奇襲・天候に気を配れ。\n斎藤義龍と関係を結べれば信長の背後を脅かせる。まず外交から手を打て。"
+    },
+    {
+      "id": "nobunaga",
+      "name": "織田信長",
+      "faction_name": "織田家",
+      "is_player": false,
+      "warlord_type": "daimyo",
+      "intelligence": 90,
+      "military": 85,
+      "charisma": 80,
+      "prestige": 30,
+      "relations": [
+        {"target": "yoshimoto",  "value": -80},
+        {"target": "yoshitatsu", "value": -50}
+      ]
+    },
+    {
+      "id": "yoshitatsu",
+      "name": "斎藤義龍",
+      "faction_name": "斎藤家",
+      "is_player": false,
+      "warlord_type": "daimyo",
+      "intelligence": 85,
+      "military": 85,
+      "charisma": 65,
+      "prestige": 55,
+      "relations": [
+        {"target": "nobunaga",  "value": -50},
+        {"target": "yoshimoto", "value": -10}
+      ]
+    }
+  ],
+  "territories": [
+    {
+      "id": "mikawa",
+      "name": "三河",
+      "owner": "yoshimoto",
+      "troops": 24500,
+      "koku": 29.0,
+      "fortification": 1,
+      "km_to_coast": 30
+    },
+    {
+      "id": "totomi",
+      "name": "遠江",
+      "owner": "yoshimoto",
+      "troops": 50,
+      "koku": 25.0,
+      "fortification": 1,
+      "km_to_coast": 20
+    },
+    {
+      "id": "suruga",
+      "name": "駿河",
+      "owner": "yoshimoto",
+      "troops": 50,
+      "koku": 15.0,
+      "fortification": 2,
+      "km_to_coast": 10
+    },
+    {
+      "id": "owari",
+      "name": "尾張",
+      "owner": "nobunaga",
+      "troops": 2000,
+      "koku": 57.0,
+      "fortification": 2,
+      "km_to_coast": 15
+    },
+    {
+      "id": "mino",
+      "name": "美濃",
+      "owner": "yoshitatsu",
+      "troops": 5000,
+      "koku": 54.0,
+      "fortification": 3,
+      "km_to_coast": 60
+    },
+    {
+      "id": "ise",
+      "name": "伊勢",
+      "owner": "neutral",
+      "troops": 1500,
+      "koku": 57.0,
+      "fortification": 1,
+      "km_to_coast": 5
+    }
+  ]
+}

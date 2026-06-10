@@ -1,0 +1,1091 @@
+{
+  "title": "九州三国志 ─ 永禄三年（1560）肥前",
+  "description": "永禄三年（1560）、肥前は三つ巴の緊張に包まれていた。北には松浦党が海を制し、東には龍造寺隆信が急速に勢力を伸ばす。島原半島の有馬・大村・小豪族たちは南蛮貿易の利権を巡り、生き残りの算段を迫られている。あなたはこの乱世にいかなる策を以て臨むか。",
+  "year": 1560,
+  "month": 1,
+  "player_id": "arima",
+  "win_condition": {
+    "type": "defeat_or_subjugate_all",
+    "targets": [
+      "ryuzoji",
+      "matsuura"
+    ]
+  },
+  "win_message": "松浦・龍造寺を制し、肥前の覇者となった！\n南蛮貿易の利権を掌握し、有馬家の黄金時代が幕を開ける。",
+  "lose_message": "有馬家は滅亡した。\n島原半島の南蛮貿易の夢は潰えた。",
+  "warlords": [
+    {
+      "id": "ryuzoji",
+      "name": "龍造寺隆信",
+      "faction_name": "龍造寺家",
+      "is_player": false,
+      "intelligence": 82,
+      "military": 90,
+      "charisma": 68,
+      "prestige": 45,
+      "relations": [
+        {
+          "target": "egami",
+          "value": 60
+        },
+        {
+          "target": "miyashiro",
+          "value": -70
+        },
+        {
+          "target": "goto",
+          "value": -60
+        },
+        {
+          "target": "tsukushi",
+          "value": -40
+        },
+        {
+          "target": "taku",
+          "value": -30
+        },
+        {
+          "target": "arima",
+          "value": -50
+        },
+        {
+          "target": "omura",
+          "value": -20
+        },
+        {
+          "target": "matsuura",
+          "value": -10
+        }
+      ]
+    },
+    {
+      "id": "arima",
+      "name": "有馬義貞",
+      "faction_name": "有馬家",
+      "is_player": true,
+      "intelligence": 82,
+      "military": 38,
+      "charisma": 72,
+      "prestige": 52,
+      "bond_types": [
+        {
+          "target": "harusumi",
+          "label": "父（後見）"
+        },
+        {
+          "target": "omura",
+          "label": "弟（大村家）"
+        }
+      ],
+      "relations": [
+        {
+          "target": "harusumi",
+          "value": 80
+        },
+        {
+          "target": "omura",
+          "value": 60
+        },
+        {
+          "target": "saigo",
+          "value": 40
+        },
+        {
+          "target": "fukahori",
+          "value": 40
+        },
+        {
+          "target": "kosaza",
+          "value": 40
+        },
+        {
+          "target": "ureyashino",
+          "value": 40
+        },
+        {
+          "target": "matsuura",
+          "value": -20
+        },
+        {
+          "target": "ryuzoji",
+          "value": -50
+        }
+      ],
+      "start_hint": "口之津……やがてポルトガル南蛮貿易の九州最大拠点となる港だ。\n大友宗麟と誼を結び、1562年6月までに関係値40以上を維持すれば、\n史実より早く南蛮港を手に入れられる。逆に放置すれば大村が横瀬浦を押さえる。\n（外交→シナリオ外勢力「大友宗麟」に使者を送れ。20貫/回→関係値+10）"
+    },
+    {
+      "id": "harusumi",
+      "name": "有馬晴純",
+      "faction_name": "有馬家（隠居）",
+      "warlord_type": "clan",
+      "liege": "arima",
+      "is_player": false,
+      "intelligence": 90,
+      "military": 68,
+      "charisma": 68,
+      "prestige": 92,
+      "bond_types": [
+        {
+          "target": "arima",
+          "label": "子（当主）"
+        },
+        {
+          "target": "omura",
+          "label": "子（大村家）"
+        }
+      ],
+      "relations": [
+        {
+          "target": "arima",
+          "value": 80
+        },
+        {
+          "target": "omura",
+          "value": 70
+        },
+        {
+          "target": "ryuzoji",
+          "value": -40
+        },
+        {
+          "target": "matsuura",
+          "value": -10
+        }
+      ]
+    },
+    {
+      "id": "omura",
+      "name": "大村純忠",
+      "faction_name": "大村家",
+      "warlord_type": "vassal",
+      "liege": "arima",
+      "is_player": false,
+      "intelligence": 70,
+      "military": 62,
+      "charisma": 72,
+      "prestige": 48,
+      "relations": [
+        {
+          "target": "arima",
+          "value": 60
+        },
+        {
+          "target": "saigo",
+          "value": 20
+        },
+        {
+          "target": "ryuzoji",
+          "value": -20
+        }
+      ]
+    },
+    {
+      "id": "egami",
+      "name": "江上武種",
+      "faction_name": "江上家",
+      "warlord_type": "vassal",
+      "liege": "ryuzoji",
+      "is_player": false,
+      "intelligence": 65,
+      "military": 72,
+      "charisma": 60,
+      "prestige": 42,
+      "relations": [
+        {
+          "target": "ryuzoji",
+          "value": 60
+        },
+        {
+          "target": "miyashiro",
+          "value": -40
+        },
+        {
+          "target": "goto",
+          "value": -30
+        }
+      ]
+    },
+    {
+      "id": "matsuura",
+      "name": "松浦隆信",
+      "faction_name": "松浦家",
+      "is_player": false,
+      "intelligence": 68,
+      "military": 72,
+      "charisma": 68,
+      "prestige": 55,
+      "relations": [
+        {
+          "target": "hata",
+          "value": -20
+        },
+        {
+          "target": "uku",
+          "value": 10
+        },
+        {
+          "target": "shisa",
+          "value": 20
+        },
+        {
+          "target": "imari",
+          "value": 20
+        },
+        {
+          "target": "kusano",
+          "value": -10
+        }
+      ]
+    },
+    {
+      "id": "hata",
+      "name": "波多盛",
+      "faction_name": "波多家",
+      "warlord_type": "vassal",
+      "liege": "matsuura",
+      "is_player": false,
+      "intelligence": 58,
+      "military": 65,
+      "charisma": 55,
+      "prestige": 50,
+      "relations": [
+        {
+          "target": "matsuura",
+          "value": -20
+        },
+        {
+          "target": "uku",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "uku",
+      "name": "宇久純定",
+      "faction_name": "宇久家",
+      "warlord_type": "vassal",
+      "liege": "matsuura",
+      "is_player": false,
+      "intelligence": 60,
+      "military": 65,
+      "charisma": 58,
+      "prestige": 45,
+      "relations": [
+        {
+          "target": "matsuura",
+          "value": 10
+        },
+        {
+          "target": "hata",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "goto",
+      "name": "後藤貴明",
+      "faction_name": "後藤家",
+      "is_player": false,
+      "intelligence": 62,
+      "military": 75,
+      "charisma": 58,
+      "prestige": 50,
+      "relations": [
+        {
+          "target": "ryuzoji",
+          "value": -60
+        },
+        {
+          "target": "egami",
+          "value": -30
+        },
+        {
+          "target": "arima",
+          "value": -10
+        }
+      ]
+    },
+    {
+      "id": "miyashiro",
+      "name": "神代勝利",
+      "faction_name": "神代家",
+      "is_player": false,
+      "intelligence": 70,
+      "military": 78,
+      "charisma": 62,
+      "prestige": 60,
+      "relations": [
+        {
+          "target": "ryuzoji",
+          "value": -70
+        },
+        {
+          "target": "egami",
+          "value": -40
+        },
+        {
+          "target": "arima",
+          "value": -20
+        }
+      ]
+    },
+    {
+      "id": "tsukushi",
+      "name": "筑紫惟門",
+      "faction_name": "筑紫家",
+      "is_player": false,
+      "intelligence": 55,
+      "military": 65,
+      "charisma": 52,
+      "prestige": 45,
+      "relations": [
+        {
+          "target": "ryuzoji",
+          "value": -40
+        },
+        {
+          "target": "goto",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "id": "taku",
+      "name": "多久宗利",
+      "faction_name": "多久家",
+      "is_player": false,
+      "intelligence": 52,
+      "military": 58,
+      "charisma": 50,
+      "prestige": 42,
+      "relations": [
+        {
+          "target": "ryuzoji",
+          "value": -30
+        }
+      ]
+    },
+    {
+      "id": "kusano",
+      "name": "草野鎮永",
+      "faction_name": "草野家",
+      "is_player": false,
+      "intelligence": 55,
+      "military": 62,
+      "charisma": 52,
+      "prestige": 42,
+      "relations": [
+        {
+          "target": "matsuura",
+          "value": -10
+        }
+      ]
+    },
+    {
+      "id": "shisa",
+      "name": "志佐純昌",
+      "faction_name": "志佐家",
+      "warlord_type": "vassal",
+      "liege": "matsuura",
+      "is_player": false,
+      "intelligence": 52,
+      "military": 58,
+      "charisma": 50,
+      "prestige": 40,
+      "relations": [
+        {
+          "target": "matsuura",
+          "value": 20
+        }
+      ]
+    },
+    {
+      "id": "imari",
+      "name": "伊万里純",
+      "faction_name": "伊万里家",
+      "warlord_type": "vassal",
+      "liege": "matsuura",
+      "is_player": false,
+      "intelligence": 50,
+      "military": 55,
+      "charisma": 50,
+      "prestige": 38,
+      "relations": [
+        {
+          "target": "matsuura",
+          "value": 20
+        }
+      ]
+    },
+    {
+      "id": "kosaza",
+      "name": "小佐々住吉",
+      "faction_name": "小佐々家",
+      "warlord_type": "vassal",
+      "liege": "arima",
+      "is_player": false,
+      "intelligence": 40,
+      "military": 44,
+      "charisma": 42,
+      "prestige": 20,
+      "treasury": 300,
+      "relations": [
+        {
+          "target": "arima",
+          "value": 40
+        }
+      ]
+    },
+    {
+      "id": "kosaza_sumimasa",
+      "name": "小佐々純勝",
+      "faction_name": "小佐々家（隠居）",
+      "warlord_type": "clan",
+      "liege": "kosaza",
+      "is_player": false,
+      "intelligence": 65,
+      "military": 60,
+      "charisma": 55,
+      "prestige": 48,
+      "relations": [
+        {
+          "target": "arima",
+          "value": 45
+        }
+      ]
+    },
+    {
+      "id": "saigo",
+      "name": "西郷純堯",
+      "faction_name": "(肥前)西郷家",
+      "warlord_type": "vassal",
+      "liege": "arima",
+      "is_player": false,
+      "intelligence": 55,
+      "military": 60,
+      "charisma": 55,
+      "prestige": 42,
+      "relations": [
+        {
+          "target": "arima",
+          "value": 40
+        },
+        {
+          "target": "omura",
+          "value": 20
+        }
+      ]
+    },
+    {
+      "id": "fukahori",
+      "name": "深堀純賢",
+      "faction_name": "深堀家",
+      "warlord_type": "vassal",
+      "liege": "arima",
+      "is_player": false,
+      "intelligence": 52,
+      "military": 58,
+      "charisma": 50,
+      "prestige": 40,
+      "relations": [
+        {
+          "target": "arima",
+          "value": 40
+        }
+      ]
+    },
+    {
+      "id": "ureyashino",
+      "name": "宇礼志野直通",
+      "faction_name": "宇礼志野家",
+      "warlord_type": "vassal",
+      "liege": "arima",
+      "is_player": false,
+      "intelligence": 48,
+      "military": 52,
+      "charisma": 48,
+      "prestige": 35,
+      "relations": [
+        {
+          "target": "arima",
+          "value": 40
+        }
+      ]
+    },
+    {
+      "id": "hidaka",
+      "name": "日高資",
+      "faction_name": "波多家（日高城）",
+      "warlord_type": "clan",
+      "liege": "hata",
+      "is_player": false,
+      "intelligence": 52,
+      "military": 55,
+      "charisma": 48,
+      "prestige": 38,
+      "relations": [
+        {
+          "target": "hata",
+          "value": 70
+        }
+      ]
+    },
+    {
+      "id": "iimori",
+      "name": "松浦親",
+      "faction_name": "松浦家（飯盛城）",
+      "warlord_type": "clan",
+      "liege": "matsuura",
+      "is_player": false,
+      "intelligence": 48,
+      "military": 52,
+      "charisma": 50,
+      "prestige": 35,
+      "relations": [
+        {
+          "target": "matsuura",
+          "value": 70
+        }
+      ]
+    },
+    {
+      "id": "aokata",
+      "name": "青方盛信",
+      "faction_name": "宇久家（青方城）",
+      "warlord_type": "clan",
+      "liege": "uku",
+      "is_player": false,
+      "intelligence": 50,
+      "military": 52,
+      "charisma": 48,
+      "prestige": 32,
+      "relations": [
+        {
+          "target": "uku",
+          "value": 70
+        }
+      ]
+    },
+    {
+      "id": "kamitaki",
+      "name": "上瀧義重",
+      "faction_name": "大村家（蟻尾城）",
+      "warlord_type": "clan",
+      "liege": "omura",
+      "is_player": false,
+      "intelligence": 45,
+      "military": 50,
+      "charisma": 45,
+      "prestige": 30,
+      "relations": [
+        {
+          "target": "arima",
+          "value": 70
+        }
+      ]
+    },
+    {
+      "id": "hirai",
+      "name": "平井経治",
+      "faction_name": "有馬家（竹崎城）",
+      "warlord_type": "clan",
+      "liege": "arima",
+      "is_player": false,
+      "intelligence": 45,
+      "military": 50,
+      "charisma": 45,
+      "prestige": 30,
+      "relations": [
+        {
+          "target": "arima",
+          "value": 70
+        }
+      ]
+    },
+    {
+      "id": "nagayo",
+      "name": "長与純平",
+      "faction_name": "大村家（唾飲城）",
+      "warlord_type": "clan",
+      "liege": "omura",
+      "is_player": false,
+      "intelligence": 45,
+      "military": 48,
+      "charisma": 45,
+      "prestige": 28,
+      "relations": [
+        {
+          "target": "arima",
+          "value": 70
+        }
+      ]
+    },
+    {
+      "id": "hario",
+      "name": "針尾伊賀守貞冶",
+      "faction_name": "針尾家",
+      "warlord_type": "daimyo",
+      "liege": "",
+      "is_player": false,
+      "intelligence": 55,
+      "military": 62,
+      "charisma": 45,
+      "prestige": 38,
+      "relations": [
+        {
+          "target": "arima",
+          "value": 20
+        },
+        {
+          "target": "omura",
+          "value": 10
+        },
+        {
+          "target": "goto",
+          "value": 30
+        }
+      ]
+    },
+    {
+      "id": "kodairo",
+      "name": "神代貴茂",
+      "faction_name": "有馬家（神代城）",
+      "warlord_type": "clan",
+      "liege": "arima",
+      "is_player": false,
+      "intelligence": 78,
+      "military": 72,
+      "charisma": 60,
+      "prestige": 55,
+      "relations": [
+        {
+          "target": "arima",
+          "value": 80
+        }
+      ]
+    },
+    {
+      "id": "yasutomi",
+      "name": "安富貞治",
+      "faction_name": "有馬家（深江城）",
+      "warlord_type": "clan",
+      "liege": "arima",
+      "is_player": false,
+      "intelligence": 48,
+      "military": 52,
+      "charisma": 48,
+      "prestige": 32,
+      "relations": [
+        {
+          "target": "arima",
+          "value": 70
+        }
+      ]
+    }
+  ],
+  "external_powers": [
+    {
+      "id": "otomo",
+      "name": "大友宗麟",
+      "faction": "大友家",
+      "relation": 20,
+      "note": "九州探題。肥前南部を友好圏に収めたく、有馬への支援に動機がある。龍造寺の増長を警戒し少弐氏復興も画策。関係値40以上で口之津誘致を支援する。"
+    }
+  ],
+  "territories": [
+    {
+      "id": "saga",
+      "name": "佐嘉城",
+      "owner": "ryuzoji",
+      "troops": 800,
+      "koku": 3.21,
+      "fortification": 3,
+      "km_to_coast": 10
+    },
+    {
+      "id": "chiba",
+      "name": "千葉城",
+      "owner": "ryuzoji",
+      "troops": 270,
+      "koku": 1.07,
+      "fortification": 2,
+      "km_to_coast": 18
+    },
+    {
+      "id": "hasuike",
+      "name": "肥前蓮池城",
+      "owner": "ryuzoji",
+      "troops": 270,
+      "koku": 1.07,
+      "fortification": 1,
+      "km_to_coast": 10
+    },
+    {
+      "id": "seifukuji",
+      "name": "勢福寺城",
+      "owner": "egami",
+      "troops": 710,
+      "koku": 2.85,
+      "fortification": 2,
+      "km_to_coast": 20
+    },
+    {
+      "id": "mitsuse",
+      "name": "三瀬城",
+      "owner": "miyashiro",
+      "troops": 270,
+      "koku": 1.07,
+      "fortification": 2,
+      "terrain": "highland",
+      "km_to_coast": 38
+    },
+    {
+      "id": "hinoe",
+      "name": "日野江城",
+      "owner": "arima",
+      "troops": 400,
+      "koku": 1.6,
+      "fortification": 3,
+      "port_tier": 2
+    },
+    {
+      "id": "omurajo",
+      "name": "大村館",
+      "owner": "omura",
+      "troops": 360,
+      "koku": 1.43,
+      "fortification": 2,
+      "port_tier": 1
+    },
+    {
+      "id": "kosazajo",
+      "name": "小佐々城",
+      "owner": "kosaza",
+      "troops": 30,
+      "koku": 0.05,
+      "fortification": 2,
+      "port_tier": 2,
+      "commerce": 2
+    },
+    {
+      "id": "inakajo",
+      "name": "田舎城",
+      "owner": "kosaza",
+      "troops": 15,
+      "koku": 0.03,
+      "fortification": 1,
+      "port_tier": 1,
+      "commerce": 1
+    },
+    {
+      "id": "enoshimajo",
+      "name": "江ノ島城",
+      "owner": "kosaza",
+      "troops": 10,
+      "koku": 0.02,
+      "fortification": 1,
+      "port_tier": 1,
+      "commerce": 1
+    },
+    {
+      "id": "hongojo",
+      "name": "本郷城",
+      "owner": "kosaza",
+      "troops": 10,
+      "koku": 0.02,
+      "fortification": 1,
+      "port_tier": 1,
+      "commerce": 1
+    },
+    {
+      "id": "isahaya",
+      "name": "伊佐早城",
+      "owner": "saigo",
+      "troops": 220,
+      "koku": 0.89,
+      "fortification": 1,
+      "port_tier": 1
+    },
+    {
+      "id": "tawaraishi",
+      "name": "俵石城",
+      "owner": "fukahori",
+      "troops": 220,
+      "koku": 0.89,
+      "fortification": 1,
+      "port_tier": 2
+    },
+    {
+      "id": "matsutake",
+      "name": "松岳城",
+      "owner": "ureyashino",
+      "troops": 130,
+      "koku": 0.53,
+      "fortification": 1,
+      "port_tier": 1
+    },
+    {
+      "id": "katsuodake",
+      "name": "勝尾嶽城",
+      "owner": "matsuura",
+      "troops": 360,
+      "koku": 1.43,
+      "fortification": 3,
+      "port_tier": 3,
+      "has_foundry": true
+    },
+    {
+      "id": "kishidake",
+      "name": "岸岳城",
+      "owner": "hata",
+      "troops": 220,
+      "koku": 0.89,
+      "fortification": 2,
+      "terrain": "highland"
+    },
+    {
+      "id": "egawa",
+      "name": "江川城",
+      "owner": "uku",
+      "troops": 270,
+      "koku": 1.07,
+      "fortification": 2,
+      "port_tier": 2
+    },
+    {
+      "id": "imarijo",
+      "name": "伊万里城",
+      "owner": "imari",
+      "troops": 220,
+      "koku": 0.89,
+      "fortification": 1,
+      "port_tier": 1
+    },
+    {
+      "id": "naoya",
+      "name": "直谷城",
+      "owner": "shisa",
+      "troops": 220,
+      "koku": 0.89,
+      "fortification": 1,
+      "terrain": "highland",
+      "km_to_coast": 10
+    },
+    {
+      "id": "tsukazaki",
+      "name": "塚崎城",
+      "owner": "goto",
+      "troops": 360,
+      "koku": 1.43,
+      "fortification": 2,
+      "km_to_coast": 16
+    },
+    {
+      "id": "katsuo",
+      "name": "勝尾城",
+      "owner": "tsukushi",
+      "troops": 270,
+      "koku": 1.07,
+      "fortification": 2,
+      "km_to_coast": 30
+    },
+    {
+      "id": "kajimine",
+      "name": "梶峰城",
+      "owner": "taku",
+      "troops": 220,
+      "koku": 0.89,
+      "fortification": 1,
+      "terrain": "highland",
+      "km_to_coast": 20
+    },
+    {
+      "id": "onigajo",
+      "name": "肥前鬼ヶ城",
+      "owner": "kusano",
+      "troops": 180,
+      "koku": 0.71,
+      "fortification": 1,
+      "terrain": "highland",
+      "km_to_coast": 20
+    },
+    {
+      "id": "hidakajo",
+      "name": "肥前日高城",
+      "owner": "hata",
+      "troops": 180,
+      "koku": 0.71,
+      "fortification": 1
+    },
+    {
+      "id": "iimorijo",
+      "name": "肥前飯盛城",
+      "owner": "matsuura",
+      "troops": 180,
+      "koku": 0.71,
+      "fortification": 1,
+      "port_tier": 1
+    },
+    {
+      "id": "aokatajo",
+      "name": "青方城",
+      "owner": "uku",
+      "troops": 180,
+      "koku": 0.71,
+      "fortification": 1,
+      "port_tier": 2
+    },
+    {
+      "id": "ariojo",
+      "name": "蟻尾城",
+      "owner": "omura",
+      "troops": 130,
+      "koku": 0.53,
+      "fortification": 1,
+      "port_tier": 1
+    },
+    {
+      "id": "takezakijo",
+      "name": "竹崎城",
+      "owner": "arima",
+      "troops": 130,
+      "koku": 0.53,
+      "fortification": 1,
+      "port_tier": 1
+    },
+    {
+      "id": "tsunomijo",
+      "name": "唾飲城",
+      "owner": "omura",
+      "troops": 130,
+      "koku": 0.53,
+      "fortification": 1
+    },
+    {
+      "id": "hariojo",
+      "name": "針尾城",
+      "owner": "hario",
+      "troops": 220,
+      "koku": 0.89,
+      "fortification": 1,
+      "port_tier": 1
+    },
+    {
+      "id": "koujirojo",
+      "name": "神代城",
+      "owner": "arima",
+      "troops": 180,
+      "koku": 0.71,
+      "fortification": 1,
+      "port_tier": 1
+    },
+    {
+      "id": "fukaejo",
+      "name": "深江城",
+      "owner": "arima",
+      "troops": 220,
+      "koku": 0.89,
+      "fortification": 1,
+      "port_tier": 1
+    },
+    {
+      "id": "kuchinotu",
+      "name": "口之津",
+      "owner": "arima",
+      "troops": 50,
+      "koku": 0.18,
+      "fortification": 1,
+      "port_tier": 1,
+      "has_foundry": true
+    },
+    {
+      "id": "yokose",
+      "name": "横瀬浦",
+      "owner": "omura",
+      "troops": 30,
+      "koku": 0.14,
+      "fortification": 1,
+      "port_tier": 1
+    }
+  ],
+  "events": [
+    {
+      "year": 1561,
+      "month": 4,
+      "type": "npc_war",
+      "attacker": "ryuzoji",
+      "defender": "miyashiro",
+      "skip_if_neutralized": [
+        "miyashiro"
+      ],
+      "result": [
+        {
+          "type": "transfer_territory",
+          "from": "miyashiro",
+          "to": "ryuzoji",
+          "territories": [
+            "mitsuse"
+          ]
+        },
+        {
+          "type": "make_vassal",
+          "lord": "ryuzoji",
+          "vassal": "miyashiro"
+        }
+      ],
+      "message": "【史実】川上峡合戦: 龍造寺隆信が神代勝利を破り、三瀬城を制圧。神代氏は龍造寺に臣従した。"
+    },
+    {
+      "year": 1563,
+      "month": 9,
+      "type": "npc_war",
+      "attacker": "ryuzoji",
+      "defender": "arima",
+      "skip_if_neutralized": [
+        "arima",
+        "omura"
+      ],
+      "result": [],
+      "message": "【史実】丹坂峠の戦い: 有馬・大村連合軍が龍造寺領に侵攻したが、龍造寺隆信がこれを撃退。南肥前への勢威が及んだ。"
+    },
+    {
+      "year": 1562,
+      "month": 6,
+      "type": "upgrade_port_conditional",
+      "conditions": {
+        "territory_owner": {
+          "id": "kuchinotu",
+          "owner": "arima"
+        },
+        "external_relation": {
+          "id": "otomo",
+          "min": 40
+        }
+      },
+      "if_true": {
+        "id": "kuchinotu",
+        "port_tier": 3
+      },
+      "if_false": {
+        "id": "yokose",
+        "port_tier": 2
+      },
+      "if_true_message": "ポルトガル船が口之津に入港した！有馬家が南蛮貿易の主導権を握った。",
+      "if_false_message": "ポルトガル船が横瀬浦に入港した。大村純忠が南蛮貿易の窓口を確保した。"
+    },
+    {
+      "year": 1564,
+      "month": 1,
+      "type": "rename_territory",
+      "id": "omurajo",
+      "new_name": "三城城"
+    },
+    {
+      "year": 1599,
+      "month": 1,
+      "type": "rename_territory",
+      "id": "omurajo",
+      "new_name": "玖島城"
+    }
+  ]
+}
