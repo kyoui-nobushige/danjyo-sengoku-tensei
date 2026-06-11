@@ -345,6 +345,7 @@ def main() -> None:
                     CAVALRY_BUY_PRICE, CAVALRY_SELL_PRICE, CAVALRY_RANCH_COST,
                     GUNNER_BUY_PRICE,  GUNNER_SELL_PRICE,  GUNNER_FORGE_COST,
                     MERCENARY_COST, COMMERCE_MAX,
+                    commerce_invest_cost, select_territory_batch, confirm_batch,
                 )
                 player = state.player
                 internal_action = cli.select_internal_action(player)
@@ -412,8 +413,8 @@ def main() -> None:
                         )
                     continue
 
-                # 領地選択が必要なアクション
-                if internal_action in ("draft", "mercenary", "2", "commerce_invest", "shinden"):
+                # 領地選択が必要なアクション（単体）
+                if internal_action in ("draft", "mercenary", "2"):
                     territory_id = cli.select_internal_territory(state)
                     if territory_id is None:
                         continue
@@ -451,39 +452,68 @@ def main() -> None:
                         else:
                             msg = f"{t.name}はすでに最高の防衛力を持つ。"
 
-                    elif internal_action == "commerce_invest":
-                        if t.commerce >= COMMERCE_MAX:
-                            msg = f"{t.name}の商業はすでに最高（Lv{COMMERCE_MAX}）。"
-                        else:
-                            cost = (t.commerce + 1) * 30
-                            if player.treasury < cost:
-                                msg = f"金庫不足。次のレベルには{cost}貫必要。（金庫:{player.treasury}貫）"
-                            else:
-                                old_lv = t.commerce
-                                old_income = int(old_lv * 5 * t.loyalty / 100)
-                                player.treasury -= cost
-                                t.commerce += 1
-                                new_income = int(t.commerce * 5 * t.loyalty / 100)
-                                msg = (
-                                    f"{t.name}に商業投資。（-{cost}貫  "
-                                    f"商業Lv{old_lv}→{t.commerce}  "
-                                    f"月収+{new_income - old_income}貫  計+{new_income}貫/月）"
-                                )
+                    state.add_log(state.player_id, msg)
+                    state.record_player_action(msg)
+                    cli.show_message(msg, "cyan")
+                    continue
 
-                    elif internal_action == "shinden":
-                        cost = max(10, int(t.koku * 30))
+                # 一括選択アクション（商業投資・新田開発）
+                if internal_action in ("commerce_invest", "shinden"):
+                    if internal_action == "commerce_invest":
+                        _cost_fn    = commerce_invest_cost
+                        _label_fn   = lambda t: f"商業Lv{t.commerce}"
+                        _eligible   = lambda t: t.commerce < COMMERCE_MAX
+                        _detail_fn  = lambda t: f"商業Lv{t.commerce}→{t.commerce+1}"
+                    else:
+                        _cost_fn    = lambda t: max(10, int(t.koku * 30))
+                        _label_fn   = lambda t: f"石高{int(t.koku*10000)}石"
+                        _eligible   = lambda _: True
+                        _detail_fn  = lambda t: f"+{int(t.koku*0.0389*10000)}石"
+
+                    territory_ids = select_territory_batch(state, _cost_fn, _label_fn, _eligible)
+                    if not territory_ids:
+                        continue
+
+                    total_cost = sum(_cost_fn(state.territories[tid]) for tid in territory_ids)
+                    if player.treasury < total_cost:
+                        cli.show_message(
+                            f"金庫不足。合計{total_cost}貫必要（金庫:{player.treasury}貫）", "red"
+                        )
+                        continue
+
+                    if not confirm_batch(player, territory_ids, state, _cost_fn, _detail_fn):
+                        continue
+
+                    msgs = []
+                    for tid in territory_ids:
+                        t = state.territories[tid]
+                        cost = _cost_fn(t)
                         if player.treasury < cost:
-                            msg = f"金庫不足。新田開発には{cost}貫必要。（金庫:{player.treasury}貫）"
+                            msgs.append(f"{t.name}:金庫不足")
+                            continue
+                        if internal_action == "commerce_invest":
+                            old_lv = t.commerce
+                            old_income = int(old_lv * 5 * t.loyalty / 100)
+                            player.treasury -= cost
+                            t.commerce += 1
+                            new_income = int(t.commerce * 5 * t.loyalty / 100)
+                            msgs.append(
+                                f"{t.name} 商業Lv{old_lv}→{t.commerce}"
+                                f"（-{cost}貫 月収+{new_income-old_income}貫）"
+                            )
                         else:
                             gain_koku = round(t.koku * 0.0389, 5)
                             gain_stone = int(gain_koku * 10000)
                             t.koku = round(t.koku + gain_koku, 5)
                             player.treasury -= cost
-                            msg = f"{t.name}で新田開発。（-{cost}貫  石高+{gain_stone}石  計{int(t.koku*10000)}石）"
+                            msgs.append(
+                                f"{t.name} 石高+{gain_stone}石→計{int(t.koku*10000)}石（-{cost}貫）"
+                            )
 
-                    state.add_log(state.player_id, msg)
-                    state.record_player_action(msg)
-                    cli.show_message(msg, "cyan")
+                    combined_msg = " / ".join(msgs)
+                    state.add_log(state.player_id, combined_msg)
+                    state.record_player_action(combined_msg)
+                    cli.show_message(combined_msg, "cyan")
                     continue
 
                 # 騎馬・鉄砲の売買・生産

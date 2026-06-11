@@ -437,6 +437,125 @@
       ]
     },
     {
+      "id": "sawamori",
+      "name": "沢森平九郎政忠",
+      "faction_name": "沢森家",
+      "warlord_type": "vassal",
+      "liege": "kosaza",
+      "is_player": true,
+      "intelligence": 78,
+      "military": 30,
+      "charisma": 58,
+      "prestige": 12,
+      "bond_types": [
+        {
+          "target": "fujimasa",
+          "label": "叔父"
+        },
+        {
+          "target": "masanao",
+          "label": "叔父"
+        },
+        {
+          "target": "kosaza",
+          "label": "主君"
+        }
+      ],
+      "relations": [
+        {
+          "target": "fujimasa",
+          "value": 80
+        },
+        {
+          "target": "masanao",
+          "value": 75
+        },
+        {
+          "target": "kosaza",
+          "value": 60
+        },
+        {
+          "target": "arima",
+          "value": 30
+        }
+      ],
+      "start_hint": "ここは肥前・西彼杵半島……俺は沢森平九郎政忠、十二歳。\n前世の記憶がある。歴史を知っている。\n父上から田舎・江ノ島・本郷の差配を任された。小さな領地だが、これが出発点だ。\n松浦・龍造寺の狭間で、有馬家を支えながら生き残る策を練れ。"
+    },
+    {
+      "id": "masanao",
+      "name": "沢森利三郎政直",
+      "faction_name": "沢森家（肥前岳城）",
+      "warlord_type": "clan",
+      "liege": "kosaza",
+      "is_player": false,
+      "intelligence": 52,
+      "military": 58,
+      "charisma": 48,
+      "prestige": 28,
+      "bond_types": [
+        {
+          "target": "sawamori",
+          "label": "甥（当主）"
+        }
+      ],
+      "relations": [
+        {
+          "target": "sawamori",
+          "value": 75
+        },
+        {
+          "target": "kosaza",
+          "value": 60
+        }
+      ]
+    },
+    {
+      "id": "fujimasa",
+      "name": "沢森忠右衛門藤政",
+      "faction_name": "沢森家（天崎城）",
+      "warlord_type": "clan",
+      "liege": "kosaza",
+      "is_player": false,
+      "intelligence": 55,
+      "military": 62,
+      "charisma": 50,
+      "prestige": 35,
+      "bond_types": [
+        {
+          "target": "sawamori",
+          "label": "甥（当主）"
+        }
+      ],
+      "relations": [
+        {
+          "target": "sawamori",
+          "value": 80
+        },
+        {
+          "target": "kosaza",
+          "value": 65
+        }
+      ]
+    },
+    {
+      "id": "ogushi",
+      "name": "大串正俊",
+      "faction_name": "小佐々家（神浦城）",
+      "warlord_type": "clan",
+      "liege": "kosaza",
+      "is_player": false,
+      "intelligence": 55,
+      "military": 65,
+      "charisma": 50,
+      "prestige": 30,
+      "relations": [
+        {
+          "target": "kosaza",
+          "value": 70
+        }
+      ]
+    },
+    {
       "id": "kosaza_sumimasa",
       "name": "小佐々純勝",
       "faction_name": "小佐々家（隠居）",
@@ -762,17 +881,17 @@
       "name": "小佐々城",
       "owner": "kosaza",
       "troops": 30,
-      "koku": 0.05,
+      "koku": 0.0443,
       "fortification": 2,
       "port_tier": 2,
       "commerce": 2
     },
     {
       "id": "inakajo",
-      "name": "田舎城",
+      "name": "平島城",
       "owner": "kosaza",
       "troops": 15,
-      "koku": 0.03,
+      "koku": 0.0006,
       "fortification": 1,
       "port_tier": 1,
       "commerce": 1
@@ -782,7 +901,7 @@
       "name": "江ノ島城",
       "owner": "kosaza",
       "troops": 10,
-      "koku": 0.02,
+      "koku": 0.0033,
       "fortification": 1,
       "port_tier": 1,
       "commerce": 1
@@ -792,10 +911,90 @@
       "name": "本郷城",
       "owner": "kosaza",
       "troops": 10,
-      "koku": 0.02,
+      "koku": 0.0011,
       "fortification": 1,
       "port_tier": 1,
       "commerce": 1
+    },
+    {
+      "id": "nakaurajo",
+      "name": "中浦城",
+      "owner": "kosaza",
+      "troops": 5,
+      "koku": 0.005,
+      "fortification": 1,
+      "port_tier": 1
+    },
+    {
+      "id": "nanatukamaura",
+      "name": "七ツ釜浦",
+      "owner": "kosaza",
+      "troops": 10,
+      "koku": 0.0,
+      "fortification": 1,
+      "port_tier": 3,
+      "terrain": "coastal"
+    },
+    {
+      "id": "torigoejo",
+      "name": "鳥越城",
+      "owner": "kosaza",
+      "troops": 3,
+      "koku": 0.0058,
+      "fortification": 1
+    },
+    {
+      "id": "hizentanakajo",
+      "name": "肥前田中城",
+      "owner": "kosaza",
+      "troops": 5,
+      "koku": 0.0056,
+      "fortification": 1
+    },
+    {
+      "id": "konourajo",
+      "name": "神浦城",
+      "owner": "kosaza",
+      "troops": 15,
+      "koku": 0.0127,
+      "fortification": 1,
+      "port_tier": 1,
+      "terrain": "coastal"
+    },
+    {
+      "id": "kudariyamajo",
+      "name": "下り山城",
+      "owner": "sawamori",
+      "troops": 5,
+      "koku": 0.008,
+      "fortification": 1,
+      "port_tier": 1
+    },
+    {
+      "id": "hizengurosejo",
+      "name": "肥前黒瀬城",
+      "owner": "kosaza",
+      "troops": 3,
+      "koku": 0.0011,
+      "fortification": 1
+    },
+    {
+      "id": "hizenakejo",
+      "name": "肥前岳城",
+      "owner": "kosaza",
+      "troops": 3,
+      "koku": 0.002,
+      "fortification": 1,
+      "terrain": "highland"
+    },
+    {
+      "id": "tensakijo",
+      "name": "肥前天崎城",
+      "owner": "kosaza",
+      "troops": 5,
+      "koku": 0.008,
+      "fortification": 1,
+      "port_tier": 1
     },
     {
       "id": "isahaya",
@@ -966,7 +1165,7 @@
       "name": "針尾城",
       "owner": "hario",
       "troops": 220,
-      "koku": 0.89,
+      "koku": 0.1043,
       "fortification": 1,
       "port_tier": 1
     },
@@ -1003,9 +1202,27 @@
       "name": "横瀬浦",
       "owner": "omura",
       "troops": 30,
-      "koku": 0.14,
+      "koku": 0.0049,
       "fortification": 1,
       "port_tier": 1
+    },
+    {
+      "id": "kawachiura",
+      "name": "河内浦",
+      "owner": "kosaza",
+      "troops": 20,
+      "koku": 0.0126,
+      "fortification": 1,
+      "port_tier": 1
+    },
+    {
+      "id": "hizentenguzanjo",
+      "name": "肥前天狗山城",
+      "owner": "kosaza",
+      "troops": 10,
+      "koku": 0.0072,
+      "fortification": 1,
+      "port_tier": 0
     }
   ],
   "events": [

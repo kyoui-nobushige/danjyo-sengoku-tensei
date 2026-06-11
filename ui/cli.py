@@ -469,6 +469,70 @@ def select_internal_territory(state: GameState) -> Optional[str]:
         console.print("  [red]番号を入力してください[/red]")
 
 
+def commerce_invest_cost(t) -> int:
+    """商業投資コスト（石高 × レベルに比例）。"""
+    return max(30, int((t.commerce + 1) * 30 * (1 + t.koku * 2)))
+
+
+def select_territory_batch(
+    state: "GameState",
+    cost_fn,
+    label_fn,
+    eligible_fn,
+) -> list[str]:
+    """複数領地の一括選択。番号/カンマ区切り/A=全部/0=キャンセル。"""
+    owned = [t for t in state.territories.values() if t.owner == state.player_id]
+    eligible = [t for t in owned if eligible_fn(t)]
+    if not eligible:
+        console.print("  [dim]対象となる領地がありません。[/dim]")
+        return []
+
+    console.print(
+        "\n[bold]【内政対象】[/bold]"
+        "  [dim]番号・スペース/カンマ区切り・A=全部・0=キャンセル[/dim]"
+    )
+    for i, t in enumerate(eligible, 1):
+        cost = cost_fn(t)
+        extra = label_fn(t)
+        console.print(f"  [{i}] {t.name}  {int(t.koku*10000):,}石  {extra}  コスト:{cost}貫")
+    console.print(f"  [A] 全部（{len(eligible)}箇所  合計{sum(cost_fn(t) for t in eligible)}貫）")
+    console.print("  [0] キャンセル")
+
+    while True:
+        choice = _input("  選択 > ").strip().lower()
+        if choice == "0":
+            return []
+        if choice == "a":
+            return [t.id for t in eligible]
+        try:
+            nums = [int(x) for x in choice.replace(",", " ").split()]
+            ids = []
+            for n in nums:
+                if 1 <= n <= len(eligible):
+                    ids.append(eligible[n - 1].id)
+                else:
+                    ids = []
+                    break
+            if ids:
+                return list(dict.fromkeys(ids))
+        except ValueError:
+            pass
+        console.print("  [red]番号で入力してください（例: 1  / 1,3  / A）[/red]")
+
+
+def confirm_batch(player, territory_ids: list, state: "GameState", cost_fn, detail_fn) -> bool:
+    """複数選択時の確認プレビュー。Yで実行、nでキャンセル。"""
+    if len(territory_ids) <= 1:
+        return True
+    total = sum(cost_fn(state.territories[tid]) for tid in territory_ids)
+    console.print(f"\n[bold]【一括実行確認】[/bold]  合計[yellow]{total}貫[/yellow]  残金庫:{player.treasury - total}貫")
+    for tid in territory_ids:
+        t = state.territories[tid]
+        console.print(f"  {t.name}: -{cost_fn(t)}貫  {detail_fn(t)}")
+    choice = _input("  実行しますか？ [Y/n] > ").strip().lower()
+    return choice != "n"
+
+
 # ── 内政・軍備メニュー定数 ───────────────────────────────────────
 
 CAVALRY_BUY_PRICE  = 5    # 貫/騎（相場購入）
