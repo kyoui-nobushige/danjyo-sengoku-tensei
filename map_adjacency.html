@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>肥前1560 城経路マップ</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  body { margin: 0; font-family: sans-serif; }
+  #map { height: 100vh; }
+  .castle-label {
+    background: rgba(255,255,255,0.88);
+    border: none !important;
+    box-shadow: none !important;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 2px 5px;
+    white-space: nowrap;
+  }
+  .castle-label::before { display: none !important; }
+  .leaflet-interactive { cursor: pointer !important; }
+  #legend {
+    position: fixed; top: 10px; right: 10px; z-index: 1000;
+    background: rgba(255,255,255,0.92); padding: 10px 14px;
+    border-radius: 6px; font-size: 12px; line-height: 1.8;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .dot { display: inline-block; width: 12px; height: 12px;
+         border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  #exportBtn {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 1000; padding: 10px 22px; font-size: 14px; font-weight: bold;
+    background: #2c3e50; color: #fff; border: none; border-radius: 6px;
+    cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  }
+  #exportBtn:hover { background: #1a252f; }
+  #waypointToggleBtn { background: #555; }
+  #waypointToggleBtn.active { background: #e67e22; }
+  #routeAddBtn { background: #2c3e50; }
+  #routeAddBtn.active { background: #27ae60; }
+  #outputBox {
+    position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+    z-index: 1000; width: 700px; max-width: 90vw;
+    background: #1e1e1e; color: #d4d4d4; font-family: monospace; font-size: 11px;
+    padding: 12px; border-radius: 6px; white-space: pre;
+    max-height: 280px; overflow-y: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    display: none;
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="legend"></div>
+<div id="outputBox"></div>
+<button id="exportBtn">📋 座標を出力（コピー用）</button>
+<button id="roadExportBtn" style="position:fixed;bottom:20px;left:calc(50% - 230px);transform:translateX(-50%);z-index:1000;padding:10px 16px;font-size:13px;background:#2980b9;color:#fff;border:none;border-radius:6px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.4);">🗺 街道一覧を確認</button>
+<button id="resetBtn" style="position:fixed;bottom:20px;left:calc(50% + 200px);transform:translateX(-50%);z-index:1000;padding:10px 16px;font-size:13px;background:#7f8c8d;color:#fff;border:none;border-radius:6px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.4);">↺ 初期位置に戻す</button>
+<button id="waypointToggleBtn" style="position:fixed;bottom:20px;left:calc(50% + 395px);transform:translateX(-50%);z-index:1000;padding:10px 16px;font-size:13px;color:#fff;border:none;border-radius:6px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.4);">✏ 中継地編集</button>
+<button id="routeAddBtn" style="position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:1000;padding:10px 20px;font-size:13px;color:#fff;border:none;border-radius:6px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.4);">＋ 経路追加</button>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map('map').setView([33.0, 129.9], 9);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+const ownerColors = {
+  ryuzoji:    "#e74c3c",
+  egami:      "#c0392b",
+  arima:      "#3498db",
+  omura:      "#1a6fa8",
+  matsuura:   "#27ae60",
+  uku:        "#1abc9c",
+  goto:       "#e67e22",
+  tsukushi:   "#d35400",
+  kusano:     "#9b59b6",
+  miyashiro:  "#8e44ad",
+  taku:       "#16a085",
+  hata:       "#2c3e50",
+  shisa:      "#f39c12",
+  imari:      "#c0a000",
+  saigo:      "#e91e63",
+  fukahori:   "#795548",
+  ureyashino: "#607d8b",
+  kosaza:     "#00bcd4",
+  sawamori:   "#ff9800",
+};
+
+const ownerNames = {
+  ryuzoji:"龍造寺", egami:"江上", arima:"有馬", omura:"大村",
+  matsuura:"松浦", uku:"宇久", goto:"後藤", tsukushi:"筑紫",
+  kusano:"草野", miyashiro:"神代", taku:"多久", hata:"波多",
+  shisa:"志佐", imari:"伊万里", saigo:"西郷", fukahori:"深堀",
+  ureyashino:"宇礼志野", kosaza:"小佐々", sawamori:"沢森",
+};
+
+// 座標は後でドラッグ調整可能
+const castles = {
+  saga:             { name:"佐嘉城",       koku:3.21,   lat:33.2451, lng:130.3030, owner:"ryuzoji" },
+  seifukuji:        { name:"勢福寺城",     koku:2.85,   lat:33.3446, lng:130.3531, owner:"egami" },
+  katsuo:           { name:"勝尾城",       koku:1.07,   lat:33.4038, lng:130.4661, owner:"tsukushi" },
+  hasuike:          { name:"蓮池城",       koku:1.07,   lat:33.2456, lng:130.3589, owner:"ryuzoji" },
+  chiba:            { name:"千葉城",       koku:1.07,   lat:33.3038, lng:130.2090, owner:"ryuzoji" },
+  mitsuse:          { name:"三瀬城",       koku:0.060,  lat:33.4630, lng:130.2809, owner:"miyashiro" },
+  fujiwara_gongen:  { name:"藤原権現山城", koku:0.023,  lat:33.4850, lng:130.2600, owner:"miyashiro" },
+  yuzuriha:         { name:"杠城",         koku:0.032,  lat:33.5100, lng:130.2350, owner:"miyashiro" },
+  kumanokawa:       { name:"熊の川城",     koku:0.059,  lat:33.4400, lng:130.2100, owner:"miyashiro" },
+  hatase:           { name:"畑瀬城",       koku:0.028,  lat:33.4050, lng:130.1500, owner:"miyashiro" },
+  tanida:           { name:"谷田城",       koku:0.021,  lat:33.3850, lng:130.0900, owner:"miyashiro" },
+  koyu:             { name:"古湯城",       koku:0.160,  lat:33.4200, lng:130.2500, owner:"miyashiro" },
+  onigajo:          { name:"肥前鬼ヶ城",   koku:0.71,   lat:33.4551, lng:130.0626, owner:"kusano" },
+  kishidake:        { name:"岸岳城",       koku:0.89,   lat:33.3573, lng:129.9786, owner:"hata" },
+  hidakajo:         { name:"肥前日高城",   koku:0.71,   lat:33.4919, lng:129.9373, owner:"hata" },
+  kajimine:         { name:"梶峰城",       koku:0.89,   lat:33.2537, lng:130.0931, owner:"taku" },
+  tsukazaki:        { name:"塚崎城",       koku:1.43,   lat:33.1883, lng:130.0179, owner:"goto" },
+  imarijo:          { name:"伊万里城",     koku:0.89,   lat:33.2776, lng:129.8795, owner:"imari" },
+  iimorijo:         { name:"肥前飯盛城",   koku:0.71,   lat:33.2017, lng:129.6660, owner:"matsuura" },
+  naoya:            { name:"直谷城",       koku:0.89,   lat:33.2873, lng:129.6955, owner:"shisa" },
+  katsuodake:       { name:"勝尾嶽城",     koku:1.43,   lat:33.3690, lng:129.5570, owner:"matsuura" },
+  aokatajo:         { name:"青方城",       koku:0.71,   lat:32.9865, lng:129.0661, owner:"uku" },
+  egawa:            { name:"江川城",       koku:1.07,   lat:32.6850, lng:128.8430, owner:"uku" },
+  matsutake:        { name:"松岳城",       koku:0.53,   lat:33.0521, lng:129.9140, owner:"ureyashino" },
+  ariojo:           { name:"蟻尾城",       koku:0.53,   lat:33.0908, lng:130.0757, owner:"omura" },
+  takezakijo:       { name:"竹崎城",       koku:0.53,   lat:32.9567, lng:130.2236, owner:"arima" },
+  omurajo:          { name:"大村館",       koku:1.43,   lat:32.9149, lng:129.9643, owner:"omura" },
+  tsunomijo:        { name:"唾飲城",       koku:0.53,   lat:32.8340, lng:129.8677, owner:"omura" },
+  kosazajo:         { name:"小佐々城",     koku:0.044,  lat:32.9727, lng:129.6492, owner:"kosaza" },
+  inakajo:          { name:"平島城",       koku:0.001,  lat:33.0012, lng:129.2404, owner:"kosaza" },
+  enoshimajo:       { name:"江ノ島城",     koku:0.003,  lat:33.0087, lng:129.3475, owner:"kosaza" },
+  hongojo:          { name:"本郷城",       koku:0.001,  lat:33.0024, lng:129.5504, owner:"kosaza" },
+  hariojo:          { name:"針尾城",       koku:0.028,  lat:33.0686, lng:129.7447, owner:"hario" },
+  sajigata:         { name:"佐志方城",     koku:0.063,  lat:33.0750, lng:129.8200, owner:"hario" },
+  ushinotake:       { name:"牛ノ岳城",     koku:0.013,  lat:33.1050, lng:129.7600, owner:"hario" },
+  isahaya:          { name:"伊佐早城",     koku:0.89,   lat:32.8452, lng:130.0475, owner:"saigo" },
+  tawaraishi:       { name:"俵石城",       koku:0.89,   lat:32.6738, lng:129.8298, owner:"fukahori" },
+  koujirojo:        { name:"神代城",       koku:0.71,   lat:32.8689, lng:130.2662, owner:"arima" },
+  fukaejo:          { name:"深江城",       koku:0.89,   lat:32.7158, lng:130.3411, owner:"arima" },
+  hinoe:            { name:"日野江城",     koku:1.6,    lat:32.6597, lng:130.2527, owner:"arima" },
+  kuchinotu:        { name:"口之津",       koku:0.18,   lat:32.600,  lng:130.191,  owner:"arima" },
+  yokose:           { name:"横瀬浦",       koku:0.005,  lat:32.977,  lng:129.662,  owner:"sawamori" },
+  kawachiura:       { name:"河内浦",       koku:0.013,  lat:32.960,  lng:129.720,  owner:"kosaza" },
+  hizentenguzanjo:  { name:"肥前天狗山城", koku:0.007,  lat:32.950,  lng:129.780,  owner:"kosaza" },
+  nakaurajo:        { name:"中浦城",       koku:0.005,  lat:33.090,  lng:129.445,  owner:"kosaza" },
+  nanatukamaura:    { name:"七ツ釜浦",     koku:0.0,    lat:33.040,  lng:129.620,  owner:"kosaza" },
+  kudariyamajo:     { name:"下り山城",     koku:0.008,  lat:32.985,  lng:129.395,  owner:"sawamori" },
+  hizengurosejo:    { name:"肥前黒瀬城",   koku:0.001,  lat:32.985,  lng:129.340,  owner:"kosaza" },
+  torigoejo:        { name:"鳥越城",       koku:0.006,  lat:32.960,  lng:129.740,  owner:"kosaza" },
+  konourajo:        { name:"神浦城",       koku:0.013,  lat:33.100,  lng:129.695,  owner:"kosaza" },
+  hizentanakajo:    { name:"肥前田中城",   koku:0.006,  lat:33.135,  lng:129.705,  owner:"kosaza" },
+  tensakijo:        { name:"肥前天崎城",   koku:0.008,  lat:33.040,  lng:129.425,  owner:"kosaza" },
+  hizenakejo:       { name:"肥前岳城",     koku:0.002,  lat:33.065,  lng:129.415,  owner:"kosaza" },
+};
+
+const adjacency = {
+  saga:        ["seifukuji","hasuike","chiba","mitsuse"],
+  seifukuji:   ["saga","katsuo","mitsuse","chiba","hasuike"],
+  katsuo:      ["seifukuji"],
+  hasuike:     ["saga","ariojo","seifukuji"],
+  chiba:       ["saga","hasuike","kajimine","seifukuji","mitsuse"],
+  mitsuse:     ["saga","kajimine","seifukuji","chiba"],
+  kajimine:    ["chiba","mitsuse","tsukazaki","kishidake"],
+  tsukazaki:       ["kajimine","imarijo","iimorijo","matsutake","ariojo"],
+  hinoe:       ["isahaya","fukaejo","kuchinotu"],
+  kuchinotu:   ["hinoe","fukaejo"],
+  koujirojo:   ["fukaejo","takezakijo","isahaya"],
+  fukaejo:     ["hinoe","koujirojo","kuchinotu"],
+  takezakijo:  ["koujirojo","ariojo","isahaya"],
+  ariojo:     ["hasuike","takezakijo","matsutake","tsukazaki"],
+  matsutake:   ["omurajo","iimorijo","tsukazaki","ariojo","hariojo"],
+  omurajo:     ["isahaya","matsutake","tsunomijo"],
+  yokose:      ["hizenakejo","kawachiura"],
+  kawachiura:  ["yokose","hizentenguzanjo"],
+  hizentenguzanjo: ["kawachiura"],
+  hariojo:     ["tsunomijo","iimorijo","matsutake","yokose"],
+  tsunomijo: ["isahaya","omurajo","hariojo","tawaraishi"],
+  isahaya:     ["hinoe","omurajo","tsunomijo","koujirojo","takezakijo","tawaraishi"],
+  tawaraishi:      ["isahaya","tsunomijo","kosazajo"],
+  kosazajo:    ["tawaraishi","inakajo","hongojo","nanatukamaura","torigoejo","konourajo"],
+  torigoejo:   ["kosazajo"],
+  konourajo:   ["kosazajo","nanatukamaura","hizentanakajo"],
+  hizentanakajo:["konourajo"],
+  inakajo:     ["kosazajo","enoshimajo","katsuodake","egawa","aokatajo"],
+  enoshimajo:  ["inakajo","hongojo","katsuodake"],
+  hongojo:     ["enoshimajo","katsuodake","kosazajo"],
+  katsuodake:  ["imarijo","naoya","iimorijo","hongojo","inakajo","enoshimajo"],
+  kishidake:   ["imarijo","onigajo","hidakajo","kajimine"],
+  hidakajo:    ["kishidake","onigajo"],
+  iimorijo:    ["katsuodake","naoya","imarijo","tsukazaki","matsutake","hariojo"],
+  naoya:       ["katsuodake","imarijo","iimorijo"],
+  imarijo:    ["katsuodake","kishidake","tsukazaki","naoya","onigajo","iimorijo"],
+  onigajo:     ["kishidake","imarijo","hidakajo"],
+  egawa:       ["aokatajo","inakajo"],
+  aokatajo:    ["egawa","inakajo","katsuodake"],
+  nakaurajo:   ["kudariyamajo","nanatukamaura"],
+  nanatukamaura:["kosazajo","nakaurajo","konourajo"],
+  kudariyamajo:["nakaurajo","tensakijo","hizengurosejo"],
+  hizengurosejo:["kudariyamajo"],
+  tensakijo:   ["kudariyamajo","hizenakejo"],
+  hizenakejo:  ["tensakijo","yokose"],
+};
+
+// ── 街道種別定義 ──
+const ROAD_TYPES = [
+  { key: "mountain", label: "山道(2)",     level: 2, color: "#8B4513", weight: 2,   dash: "5,6" },
+  { key: "side",     label: "脇街道(3)",   level: 3, color: "#27ae60", weight: 2.5, dash: null  },
+  { key: "main",     label: "主要街道(5)", level: 5, color: "#2980b9", weight: 5,   dash: null  },
+  { key: "coastal",  label: "沿岸海路",    level: 4, color: "#00bcd4", weight: 2.5, dash: "3,6" },
+  { key: "ocean",    label: "外洋海路",    level: 7, color: "#607d8b", weight: 2,   dash: "10,6"},
+];
+const ROAD_TYPE_KEYS = ROAD_TYPES.map(r => r.key);
+
+// ── ルート種別データ ──
+// DEFAULT_COASTAL_SEA: 陸路+沿岸海路の両持ち（陸上の沿岸港）
+const DEFAULT_COASTAL_SEA = new Set([
+  "ariojo|hasuike","ariojo|takezakijo","hinoe|isahaya",
+  "koujirojo|takezakijo","isahaya|koujirojo","isahaya|takezakijo",
+  "matsutake|hariojo","omurajo|tsunomijo","hariojo|kosazajo",
+  "hariojo|tsunomijo","hariojo|iimorijo","isahaya|tawaraishi",
+  "tawaraishi|tsunomijo","aokatajo|egawa","aokatajo|inakajo",
+  "aokatajo|katsuodake","egawa|inakajo","enoshimajo|hongojo",
+  "enoshimajo|inakajo","enoshimajo|katsuodake","hongojo|katsuodake",
+  "hongojo|kosazajo","inakajo|katsuodake","inakajo|kosazajo",
+  "kosazajo|hariojo","kosazajo|katsuodake","kosazajo|tawaraishi",
+  "isahaya|tawaraishi",
+  "fukaejo|kuchinotu","hinoe|kuchinotu",
+  "hariojo|yokose",
+  "kosazajo|nanatukamaura",
+  "nakaurajo|nanatukamaura",
+]);
+// DEFAULT_OCEAN_SEA: 陸路+外洋海路（将来：島嶼間航路など）
+const DEFAULT_OCEAN_SEA  = new Set([]);
+// DEFAULT_SEA_ONLY: 海路のみ（陸路なし・孤島など）
+const DEFAULT_SEA_ONLY   = new Set([]);
+// DEFAULT_MAIN_LAND / DEFAULT_SIDE_LAND: 主要街道・脇街道指定
+const DEFAULT_MAIN_LAND  = new Set([]);
+const DEFAULT_SIDE_LAND  = new Set([]);
+
+const ROAD_LEVELS_KEY = 'hizen1560_road_levels';
+
+// 旧フォーマット（文字列）→新フォーマット（{land,sea}）変換
+function migrateRouteVal(val) {
+  if (!val) return { land: "mountain", sea: null };
+  if (typeof val === 'object') return val;
+  const seaKeys = new Set(["coastal","ocean"]);
+  return seaKeys.has(val) ? { land: null, sea: val } : { land: val, sea: null };
+}
+
+function getRouteTypes(key) {
+  const saved = JSON.parse(localStorage.getItem(ROAD_LEVELS_KEY) || '{}');
+  if (saved[key] !== undefined) return migrateRouteVal(saved[key]);
+  if (DEFAULT_SEA_ONLY.has(key))  return { land: null, sea: "coastal" };
+  const sea  = DEFAULT_OCEAN_SEA.has(key)  ? "ocean"
+             : DEFAULT_COASTAL_SEA.has(key) ? "coastal" : null;
+  const land = DEFAULT_MAIN_LAND.has(key)  ? "main"
+             : DEFAULT_SIDE_LAND.has(key)  ? "side" : "mountain";
+  return { land, sea };
+}
+
+function setRouteTypes(key, land, sea) {
+  const saved = JSON.parse(localStorage.getItem(ROAD_LEVELS_KEY) || '{}');
+  saved[key] = { land, sea };
+  localStorage.setItem(ROAD_LEVELS_KEY, JSON.stringify(saved));
+}
+
+// クリックでサイクルする組み合わせ
+const ROUTE_CYCLE = [
+  { land: "mountain", sea: null      },
+  { land: "side",     sea: null      },
+  { land: "main",     sea: null      },
+  { land: "mountain", sea: "coastal" },
+  { land: "side",     sea: "coastal" },
+  { land: "main",     sea: "coastal" },
+  { land: null,       sea: "coastal" },
+  { land: null,       sea: "ocean"   },
+  { land: "mountain", sea: "ocean"   },
+];
+function _rcKey(r) { return `${r.land||''}|${r.sea||''}`; }
+function nextRouteCycle(cur) {
+  const k = _rcKey(cur);
+  const idx = ROUTE_CYCLE.findIndex(r => _rcKey(r) === k);
+  return ROUTE_CYCLE[(idx + 1) % ROUTE_CYCLE.length];
+}
+function describeRouteTypes({ land, sea }) {
+  const parts = [];
+  if (land) parts.push(ROAD_TYPES.find(r => r.key === land)?.label || land);
+  if (sea)  parts.push(ROAD_TYPES.find(r => r.key === sea )?.label || sea);
+  return parts.join(' + ') || 'なし';
+}
+
+// 経路ポリライン
+const WAYPOINTS_KEY = 'hizen1560_waypoints';
+
+function getWaypoints(key) {
+  const saved = JSON.parse(localStorage.getItem(WAYPOINTS_KEY) || '{}');
+  return saved[key] || [];
+}
+
+function saveWaypointsData(key, pts) {
+  const saved = JSON.parse(localStorage.getItem(WAYPOINTS_KEY) || '{}');
+  if (!pts || pts.length === 0) delete saved[key];
+  else saved[key] = pts;
+  localStorage.setItem(WAYPOINTS_KEY, JSON.stringify(saved));
+}
+
+function buildPolylinePts(fromId, toId, key) {
+  const fa = castles[fromId], fb = castles[toId];
+  const wps = getWaypoints(key);
+  return [[fa.lat, fa.lng], ...wps.map(w => [w.lat, w.lng]), [fb.lat, fb.lng]];
+}
+
+const polylines = {};    // 表示用（細い）
+const hitPolylines = {}; // ヒット領域（透明・太い）
+const waypointMarkersMap = {};
+let waypointEditMode = false;
+let routeAddMode = false;
+let routeFromId = null;
+
+const CUSTOM_ROUTES_KEY = 'hizen1560_custom_routes';
+function getCustomRoutes() {
+  return JSON.parse(localStorage.getItem(CUSTOM_ROUTES_KEY) || '[]');
+}
+function saveCustomRoute(key) {
+  const routes = getCustomRoutes();
+  if (!routes.includes(key)) {
+    routes.push(key);
+    localStorage.setItem(CUSTOM_ROUTES_KEY, JSON.stringify(routes));
+  }
+}
+function deleteCustomRoute(key) {
+  localStorage.setItem(CUSTOM_ROUTES_KEY, JSON.stringify(getCustomRoutes().filter(r => r !== key)));
+}
+
+const DELETED_ROUTES_KEY = 'hizen1560_deleted_routes';
+function getDeletedRoutes() {
+  return new Set(JSON.parse(localStorage.getItem(DELETED_ROUTES_KEY) || '[]'));
+}
+function markRouteDeleted(key) {
+  const s = getDeletedRoutes(); s.add(key);
+  localStorage.setItem(DELETED_ROUTES_KEY, JSON.stringify([...s]));
+}
+function unmarkRouteDeleted(key) {
+  const s = getDeletedRoutes(); s.delete(key);
+  localStorage.setItem(DELETED_ROUTES_KEY, JSON.stringify([...s]));
+}
+
+function makeWaypointIcon() {
+  return L.divIcon({
+    className: '',
+    html: '<div style="width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid #444;cursor:move;box-shadow:0 1px 3px rgba(0,0,0,0.5);"></div>',
+    iconSize: [10, 10], iconAnchor: [5, 5],
+  });
+}
+
+function rebuildWaypointMarkers(key) {
+  if (waypointMarkersMap[key]) {
+    waypointMarkersMap[key].forEach(m => map.removeLayer(m));
+  }
+  waypointMarkersMap[key] = [];
+  const wps = getWaypoints(key);
+  wps.forEach((wp, i) => {
+    const m = L.marker([wp.lat, wp.lng], {
+      icon: makeWaypointIcon(), draggable: true, zIndexOffset: 200,
+    }).addTo(map);
+    m.on('drag', () => {
+      const pos = m.getLatLng();
+      const allWps = getWaypoints(key);
+      allWps[i] = { lat: Math.round(pos.lat * 10000) / 10000, lng: Math.round(pos.lng * 10000) / 10000 };
+      saveWaypointsData(key, allWps);
+      refreshPolyline(key);
+    });
+    m.on('contextmenu', (e) => {
+      L.DomEvent.stopPropagation(e);
+      const allWps = getWaypoints(key);
+      allWps.splice(i, 1);
+      saveWaypointsData(key, allWps);
+      rebuildWaypointMarkers(key);
+      refreshPolyline(key);
+      showToast('中継地を削除しました');
+    });
+    waypointMarkersMap[key].push(m);
+  });
+}
+
+function refreshPolyline(key) {
+  const layers = polylines[key];
+  if (!layers) return;
+  const [a, b] = key.split('|');
+  const pts = buildPolylinePts(a, b, key);
+  (Array.isArray(layers) ? layers : [layers]).forEach(pl => pl.setLatLngs(pts));
+  if (hitPolylines[key]) hitPolylines[key].setLatLngs(pts);
+}
+
+function createRoutePolyline(fromId, toId, key, isCustom) {
+  function buildVisLayers(types, pts) {
+    const ls = [];
+    const { land, sea } = types;
+    if (sea) {
+      const s = ROAD_TYPES.find(r => r.key === sea);
+      if (s) ls.push(L.polyline(pts, {
+        color: s.color, weight: s.weight + (land ? 2 : 0),
+        opacity: 0.85, dashArray: s.dash, interactive: false,
+      }).addTo(map));
+    }
+    if (land) {
+      const s = ROAD_TYPES.find(r => r.key === land);
+      if (s) ls.push(L.polyline(pts, {
+        color: s.color, weight: s.weight, opacity: 0.85, dashArray: s.dash, interactive: false,
+      }).addTo(map));
+    }
+    return ls;
+  }
+
+  const pts = buildPolylinePts(fromId, toId, key);
+  let visLayers = buildVisLayers(getRouteTypes(key), pts);
+  polylines[key] = visLayers;
+
+  const hitPl = L.polyline(pts, { weight: 20, opacity: 0, interactive: true }).addTo(map);
+  hitPolylines[key] = hitPl;
+
+  hitPl.on('click', (e) => {
+    if (waypointEditMode) {
+      L.DomEvent.stopPropagation(e);
+      const allWps = getWaypoints(key);
+      allWps.push({ lat: Math.round(e.latlng.lat*10000)/10000, lng: Math.round(e.latlng.lng*10000)/10000 });
+      saveWaypointsData(key, allWps);
+      rebuildWaypointMarkers(key);
+      refreshPolyline(key);
+      const [a, b] = key.split('|');
+      showToast(`${castles[a]?.name}↔${castles[b]?.name}：中継地追加`);
+    } else {
+      const next = nextRouteCycle(getRouteTypes(key));
+      setRouteTypes(key, next.land, next.sea);
+      visLayers.forEach(pl => map.removeLayer(pl));
+      const curPts = buildPolylinePts(fromId, toId, key);
+      visLayers = buildVisLayers(next, curPts);
+      polylines[key] = visLayers;
+      const [a, b] = key.split('|');
+      showToast(`${castles[a]?.name||a} ↔ ${castles[b]?.name||b}：${describeRouteTypes(next)}`);
+    }
+  });
+
+  hitPl.on('contextmenu', (e) => {
+    L.DomEvent.stopPropagation(e);
+    const [a, b] = key.split('|');
+    const na = castles[a]?.name||a, nb = castles[b]?.name||b;
+    if (!confirm(`${na} ↔ ${nb} の経路を削除しますか？`)) return;
+    visLayers.forEach(pl => map.removeLayer(pl));
+    map.removeLayer(hitPl);
+    delete polylines[key];
+    delete hitPolylines[key];
+    if (isCustom) deleteCustomRoute(key);
+    else markRouteDeleted(key);
+    saveWaypointsData(key, []);
+    rebuildWaypointMarkers(key);
+    showToast(`${na} ↔ ${nb}：経路を削除しました`);
+  });
+}
+
+const deletedRoutes = getDeletedRoutes();
+const drawn = new Set();
+for (const [from, targets] of Object.entries(adjacency)) {
+  for (const to of targets) {
+    const key = [from, to].sort().join('|');
+    if (!drawn.has(key) && castles[from] && castles[to] && !deletedRoutes.has(key)) {
+      drawn.add(key);
+      createRoutePolyline(from, to, key, false);
+    }
+  }
+}
+
+// ドラッグ用アイコン生成
+function makeIcon(color) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:18px;height:18px;border-radius:50%;background:${color};border:2.5px solid #222;opacity:0.93;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+    tooltipAnchor: [0, -12],
+    popupAnchor: [0, -12],
+  });
+}
+
+// 備考
+const NOTES_KEY = 'hizen1560_notes';
+function getCastleNote(id) {
+  return (JSON.parse(localStorage.getItem(NOTES_KEY) || '{}'))[id] || '';
+}
+function setCastleNote(id, text) {
+  const notes = JSON.parse(localStorage.getItem(NOTES_KEY) || '{}');
+  if (!text.trim()) delete notes[id]; else notes[id] = text;
+  localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+}
+function buildPopupContent(id, titleHtml, detailsHtml) {
+  const note = getCastleNote(id).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `${titleHtml}${detailsHtml}` +
+    `<hr style="margin:5px 0 3px">` +
+    `<div style="font-size:11px;color:#666;margin-bottom:2px">備考</div>` +
+    `<textarea rows="3" style="width:190px;font-size:11px;resize:vertical;box-sizing:border-box" ` +
+    `placeholder="メモを入力..." oninput="setCastleNote('${id}',this.value)">${note}</textarea>`;
+}
+
+// 経路ポリラインを城の現在位置で更新
+function updatePolylines(id) {
+  for (const key of Object.keys(polylines)) {
+    const [a, b] = key.split('|');
+    if (a === id || b === id) {
+      refreshPolyline(key);
+    }
+  }
+}
+
+// マーカー描画
+const markers = {};
+for (const [id, c] of Object.entries(castles)) {
+  const color = ownerColors[c.owner] || '#888';
+  const marker = L.marker([c.lat, c.lng], {
+    icon: makeIcon(color),
+    draggable: true,
+    title: c.name,
+  }).addTo(map);
+
+  const _stone = c.koku > 0 ? Math.round(c.koku * 10000) : 0;
+  const kokuStr = _stone > 0
+    ? (_stone >= 10000 ? `${(_stone / 10000).toFixed(1)}万石` : `${_stone.toLocaleString()}石`)
+    : '';
+  const tooltipLabel = kokuStr ? `${c.name}  ${kokuStr}` : c.name;
+  marker.bindTooltip(tooltipLabel, {
+    permanent: true, direction: 'top', offset: [0, -2],
+    className: 'castle-label'
+  });
+  marker.bindPopup(buildPopupContent(id,
+    `<b>${c.name}</b>`,
+    `<br><span style="font-size:11px;color:#555">` +
+    `勢力: ${ownerNames[c.owner] || c.owner}` +
+    (kokuStr ? `<br>石高: <span style="color:#2980b9">${kokuStr}</span>` : '') +
+    `</span>`
+  ), { minWidth: 210 });
+
+  marker.on('click', (e) => {
+    if (!routeAddMode) return;
+    L.DomEvent.stopPropagation(e);
+    marker.closePopup();
+    if (!routeFromId) {
+      routeFromId = id;
+      markers[id].setIcon(makeIcon('#FFD700'));
+      showToast(`${castles[id].name} を選択 → 接続先をクリック`);
+    } else if (routeFromId === id) {
+      markers[id].setIcon(makeIcon(ownerColors[castles[id].owner] || '#888'));
+      routeFromId = null;
+      showToast('選択解除');
+    } else {
+      const fromId = routeFromId;
+      markers[fromId].setIcon(makeIcon(ownerColors[castles[fromId].owner] || '#888'));
+      routeFromId = null;
+      const key = [fromId, id].sort().join('|');
+      if (polylines[key]) {
+        showToast(`${castles[fromId].name} ↔ ${castles[id].name}：経路は既に存在します`);
+        return;
+      }
+      saveCustomRoute(key);
+      createRoutePolyline(fromId, id, key, true);
+      showToast(`${castles[fromId].name} ↔ ${castles[id].name}：経路を追加しました`);
+    }
+  });
+
+  marker.on('dragend', () => {
+    const pos = marker.getLatLng();
+    castles[id].lat = Math.round(pos.lat * 10000) / 10000;
+    castles[id].lng = Math.round(pos.lng * 10000) / 10000;
+    updatePolylines(id);
+    savePositions();
+  });
+
+  markers[id] = marker;
+}
+
+// localStorage に保存・復元
+const STORAGE_KEY = 'hizen1560_positions';
+
+function savePositions() {
+  const saved = {};
+  for (const [id, c] of Object.entries(castles)) {
+    saved[id] = { lat: c.lat, lng: c.lng };
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+}
+
+// IDリネーム移行マップ（旧ID → 新ID）
+const ID_MIGRATIONS = {
+  rengoji:    "hasuike",
+  takeo:      "tsukazaki",
+  naotani:    "naoya",
+  aritojo:    "ariojo",
+  tarawa:     "tawaraishi",
+  kodairojo:  "koujirojo",
+  imariijo:   "imarijo",
+  tsunomijo:"tsunomijo",
+};
+
+function migratePositions(saved) {
+  let changed = false;
+  for (const [oldId, newId] of Object.entries(ID_MIGRATIONS)) {
+    if (saved[oldId] && !saved[newId]) {
+      saved[newId] = saved[oldId];
+      delete saved[oldId];
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+function loadPositions() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const saved = JSON.parse(raw);
+    const migrated = migratePositions(saved);
+    if (migrated) localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+    for (const [id, pos] of Object.entries(saved)) {
+      if (castles[id] && markers[id]) {
+        castles[id].lat = pos.lat;
+        castles[id].lng = pos.lng;
+        markers[id].setLatLng([pos.lat, pos.lng]);
+      }
+    }
+    // 全ポリライン更新
+    for (const key of Object.keys(polylines)) {
+      refreshPolyline(key);
+    }
+  } catch(e) {}
+}
+
+loadPositions();
+
+function loadAllWaypoints() {
+  const saved = JSON.parse(localStorage.getItem(WAYPOINTS_KEY) || '{}');
+  for (const key of Object.keys(saved)) {
+    if (polylines[key]) {
+      refreshPolyline(key); // 経路の曲がりだけ反映、白丸は出さない
+    }
+  }
+}
+loadAllWaypoints();
+
+function loadCustomRoutes() {
+  for (const key of getCustomRoutes()) {
+    if (polylines[key]) continue;
+    const [a, b] = key.split('|');
+    if (!castles[a] || !castles[b]) continue;
+    createRoutePolyline(a, b, key, true);
+  }
+}
+loadCustomRoutes();
+
+// カスタム経路の出力ボタン（右クリック）
+document.getElementById('routeAddBtn').addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  const custom = getCustomRoutes();
+  const deleted = [...getDeletedRoutes()];
+  if (custom.length === 0 && deleted.length === 0) { showToast('変更した経路はありません'); return; }
+  const lines = [];
+  if (custom.length > 0) {
+    lines.push('【追加経路】');
+    custom.forEach(key => {
+      const [a, b] = key.split('|');
+      lines.push(`  ${a}|${b}  (${castles[a]?.name || a} ↔ ${castles[b]?.name || b})`);
+    });
+  }
+  if (deleted.length > 0) {
+    lines.push('【削除経路】');
+    deleted.forEach(key => {
+      const [a, b] = key.split('|');
+      lines.push(`  ${a}|${b}  (${castles[a]?.name || a} ↔ ${castles[b]?.name || b})`);
+    });
+  }
+  const text = lines.join('\n');
+  navigator.clipboard.writeText(text).catch(() => {});
+  const box = document.getElementById('outputBox');
+  box.textContent = text;
+  box.style.display = 'block';
+  showToast('経路変更をコピーしました');
+});
+
+// 経路追加トグル
+document.getElementById('routeAddBtn').addEventListener('click', () => {
+  routeAddMode = !routeAddMode;
+  const btn = document.getElementById('routeAddBtn');
+  if (routeAddMode) {
+    btn.classList.add('active');
+    btn.textContent = '＋ 経路追加中';
+    showToast('城マーカーをクリック→接続先をクリックで経路追加  追加した経路は右クリックで削除可');
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '＋ 経路追加';
+    if (routeFromId) {
+      markers[routeFromId].setIcon(makeIcon(ownerColors[castles[routeFromId].owner] || '#888'));
+      routeFromId = null;
+    }
+    showToast('経路追加モード終了');
+  }
+});
+
+// 中継地編集トグル
+document.getElementById('waypointToggleBtn').addEventListener('click', () => {
+  waypointEditMode = !waypointEditMode;
+  const btn = document.getElementById('waypointToggleBtn');
+  if (waypointEditMode) {
+    btn.classList.add('active');
+    btn.textContent = '✏ 中継地編集中';
+    // 全ウェイポイントの白丸を表示
+    const saved = JSON.parse(localStorage.getItem(WAYPOINTS_KEY) || '{}');
+    for (const key of Object.keys(saved)) {
+      if (polylines[key]) rebuildWaypointMarkers(key);
+    }
+    showToast('経路クリック→中継地追加  中継地を右クリック→削除');
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '✏ 中継地編集';
+    // 全ウェイポイントの白丸を非表示
+    for (const ms of Object.values(waypointMarkersMap)) {
+      ms.forEach(m => map.removeLayer(m));
+    }
+    for (const key of Object.keys(waypointMarkersMap)) {
+      waypointMarkersMap[key] = [];
+    }
+    showToast('中継地編集モード終了');
+  }
+});
+
+// 街道一覧ボタン
+document.getElementById('roadExportBtn').addEventListener('click', () => {
+  const box = document.getElementById('outputBox');
+  const byType = {};
+  for (const rt of ROAD_TYPES) byType[rt.key] = [];
+
+  for (const key of Object.keys(polylines)) {
+    const { land, sea } = getRouteTypes(key);
+    const [a, b] = key.split('|');
+    const na = castles[a]?.name || a;
+    const nb = castles[b]?.name || b;
+    const label = describeRouteTypes({ land, sea });
+    const entry = `  ${na} ↔ ${nb}`;
+    if (land) (byType[land] = byType[land] || []).push(entry);
+    if (sea)  (byType[sea]  = byType[sea]  || []).push(entry);
+    if (!land && !sea) (byType["mountain"] = byType["mountain"] || []).push(entry);
+  }
+
+  const lines = [];
+  for (const rt of ROAD_TYPES) {
+    const routes = byType[rt.key] || [];
+    lines.push(`【${rt.label}】 ${routes.length}本`);
+    for (const r of routes.sort()) lines.push(r);
+  }
+  const total = Object.keys(polylines).length;
+  lines.unshift(`経路合計: ${total}本\n`);
+
+  box.textContent = lines.join('\n');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  if (box.style.display === 'block') {
+    navigator.clipboard.writeText(lines.join('\n')).catch(() => {});
+  }
+});
+
+// リセットボタン
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (!confirm('保存した位置・経路変更をすべてリセットしますか？')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(DELETED_ROUTES_KEY);
+  localStorage.removeItem(CUSTOM_ROUTES_KEY);
+  localStorage.removeItem(WAYPOINTS_KEY);
+  location.reload();
+});
+
+// 座標出力（game_state.py / HTML更新用）
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const box = document.getElementById('outputBox');
+  const lines = Object.entries(castles).map(([id, c]) => {
+    const pad = ' '.repeat(Math.max(0, 12 - id.length));
+    return `  ${id}:${pad}{ name:"${c.name}", lat:${c.lat.toFixed(4)}, lng:${c.lng.toFixed(4)}, owner:"${c.owner}" },`;
+  });
+  const text = 'const castles = {\n' + lines.join('\n') + '\n};';
+  box.textContent = text;
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  if (box.style.display === 'block') {
+    navigator.clipboard.writeText(text).catch(() => {});
+  }
+});
+
+// ── ゲーム状態ポーリング ──────────────────────────────────────────
+let _lastTurn = -1;
+
+function applyMapState(data) {
+  for (const [id, info] of Object.entries(data.castles || {})) {
+    if (!markers[id]) continue;
+    const color = ownerColors[info.owner] || '#888';
+    markers[id].setIcon(makeIcon(color));
+    const kokuStone = Math.round(info.koku * 10000);
+    const kokuStr = kokuStone >= 10000
+      ? `${(kokuStone / 10000).toFixed(1)}万石`
+      : `${kokuStone.toLocaleString()}石`;
+    markers[id].setTooltipContent(`${info.name}  ${kokuStr}`);
+    const portLabel = info.port_tier > 0 ? ` | 港${info.port_tier}` : '';
+    if (!markers[id].isPopupOpen()) {
+      markers[id].setPopupContent(buildPopupContent(id,
+        `<b>${info.name}</b>`,
+        `<br><span style="font-size:11px;color:#555">` +
+        `勢力: ${ownerNames[info.owner] || info.owner}<br>` +
+        `兵力: ${info.troops.toLocaleString()} | 石高: ${kokuStr}${portLabel}</span>`
+      ), { minWidth: 210 });
+    }
+  }
+  // 年月表示
+  const label = `${data.year}年${data.month}月  Turn ${data.turn}`;
+  let el = document.getElementById('gameDate');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'gameDate';
+    el.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);' +
+      'background:rgba(0,0,0,0.65);color:#fff;padding:4px 14px;border-radius:4px;' +
+      'font-size:14px;font-weight:bold;z-index:1000;pointer-events:none;';
+    document.body.appendChild(el);
+  }
+  el.textContent = label;
+
+  // 凡例を更新
+  legend.innerHTML = `<b>${label}</b><br><small style="color:#888">マーカーはドラッグで移動可</small><br>`;
+  const shown = new Set();
+  for (const info of Object.values(data.castles || {})) {
+    if (!shown.has(info.owner)) {
+      shown.add(info.owner);
+      const col = ownerColors[info.owner] || '#888';
+      legend.innerHTML += `<span class="dot" style="background:${col}"></span>${ownerNames[info.owner] || info.owner}<br>`;
+    }
+  }
+  legend.innerHTML += '<br><b>街道種別</b> <small style="color:#888">（経路クリックで切替）</small><br>';
+  for (const rt of ROAD_TYPES) {
+    const dash = rt.dash ? `border-top:2px dashed ${rt.color}` : `border-top:${rt.weight}px solid ${rt.color}`;
+    legend.innerHTML += `<span style="display:inline-block;width:24px;height:0;${dash};vertical-align:middle;margin-right:6px;margin-bottom:2px"></span>${rt.label}<br>`;
+  }
+}
+
+async function pollMapState() {
+  try {
+    const res = await fetch('map_state.json?_=' + Date.now());
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.turn !== _lastTurn) {
+      _lastTurn = data.turn;
+      applyMapState(data);
+    }
+  } catch(e) {}
+}
+
+// 起動時に1回 + 以降2.5秒ごと
+pollMapState();
+setInterval(pollMapState, 2500);
+
+// トースト通知
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:6px 16px;border-radius:6px;font-size:13px;z-index:9999;opacity:0;transition:opacity 0.3s';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2000);
+}
+
+// 凡例
+const legend = document.getElementById('legend');
+legend.innerHTML = '<b>勢力</b><br><small style="color:#888">マーカーはドラッグで移動可</small><br>';
+const shown = new Set();
+for (const c of Object.values(castles)) {
+  if (!shown.has(c.owner)) {
+    shown.add(c.owner);
+    const col = ownerColors[c.owner] || '#888';
+    legend.innerHTML += `<span class="dot" style="background:${col}"></span>${ownerNames[c.owner] || c.owner}<br>`;
+  }
+}
+legend.innerHTML += '<br><b>街道種別</b> <small style="color:#888">（経路クリックで切替）</small><br>';
+for (const rt of ROAD_TYPES) {
+  const dash = rt.dash ? `border-top:2px dashed ${rt.color}` : `border-top:${rt.weight}px solid ${rt.color}`;
+  legend.innerHTML += `<span style="display:inline-block;width:24px;height:0;${dash};vertical-align:middle;margin-right:6px;margin-bottom:2px"></span>${rt.label}<br>`;
+}
+</script>
+</body>
+</html>

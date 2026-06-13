@@ -69,7 +69,7 @@
       "prestige": 52,
       "bond_types": [
         {
-          "target": "harusumi",
+          "target": "haruzumi",
           "label": "父（後見）"
         },
         {
@@ -79,7 +79,7 @@
       ],
       "relations": [
         {
-          "target": "harusumi",
+          "target": "haruzumi",
           "value": 80
         },
         {
@@ -114,7 +114,7 @@
       "start_hint": "口之津……やがてポルトガル南蛮貿易の九州最大拠点となる港だ。\n大友宗麟と誼を結び、1562年6月までに関係値40以上を維持すれば、\n史実より早く南蛮港を手に入れられる。逆に放置すれば大村が横瀬浦を押さえる。\n（外交→シナリオ外勢力「大友宗麟」に使者を送れ。20貫/回→関係値+10）"
     },
     {
-      "id": "harusumi",
+      "id": "haruzumi",
       "name": "有馬晴純",
       "faction_name": "有馬家（隠居）",
       "warlord_type": "clan",
@@ -852,11 +852,78 @@
       "id": "mitsuse",
       "name": "三瀬城",
       "owner": "miyashiro",
-      "troops": 270,
-      "koku": 1.07,
+      "troops": 40,
+      "koku": 0.060,
       "fortification": 2,
       "terrain": "highland",
-      "km_to_coast": 38
+      "km_to_coast": 38,
+      "notes": "神代勝利の本城。【担当】三瀬368・久保山176・腹巻115・鹿路390・廣瀧317＝天保1366石→慶長0.060万石"
+    },
+    {
+      "id": "fujiwara_gongen",
+      "name": "藤原権現山城",
+      "owner": "miyashiro",
+      "troops": 15,
+      "koku": 0.023,
+      "fortification": 1,
+      "terrain": "highland",
+      "km_to_coast": 35,
+      "notes": "【担当】藤原（上+下）528石→慶長0.023万石"
+    },
+    {
+      "id": "yuzuriha",
+      "name": "杠城",
+      "owner": "miyashiro",
+      "troops": 25,
+      "koku": 0.032,
+      "fortification": 1,
+      "terrain": "highland",
+      "km_to_coast": 38,
+      "notes": "【担当】杠739石（絵図）→慶長0.032万石"
+    },
+    {
+      "id": "kumanokawa",
+      "name": "熊の川城",
+      "owner": "miyashiro",
+      "troops": 40,
+      "koku": 0.059,
+      "fortification": 1,
+      "terrain": "highland",
+      "km_to_coast": 28,
+      "notes": "【担当】関屋488・菖蒲190・松瀬666＝天保1344石→慶長0.059万石"
+    },
+    {
+      "id": "hatase",
+      "name": "畑瀬城",
+      "owner": "miyashiro",
+      "troops": 20,
+      "koku": 0.028,
+      "fortification": 1,
+      "terrain": "highland",
+      "km_to_coast": 30,
+      "notes": "【担当】畑瀬102・名尾195・梅野347＝天保644石→慶長0.028万石"
+    },
+    {
+      "id": "tanida",
+      "name": "谷田城",
+      "owner": "miyashiro",
+      "troops": 15,
+      "koku": 0.021,
+      "fortification": 1,
+      "terrain": "highland",
+      "km_to_coast": 26,
+      "notes": "【担当】小副川468石→慶長0.021万石。木山城・舞岳城も同字(小副川)に存在するが本城で代表。"
+    },
+    {
+      "id": "koyu",
+      "name": "古湯城",
+      "owner": "miyashiro",
+      "troops": 115,
+      "koku": 0.160,
+      "fortification": 1,
+      "terrain": "highland",
+      "km_to_coast": 42,
+      "notes": "【担当】小城十二ヶ山全12村：古湯298・大串274・大野200・麻那古417・合瀬319・藤瀬214・古場299・無津呂561・栗並345・杉並148・市川395・波多瀬171＝天保3641石→慶長0.160万石"
     },
     {
       "id": "hinoe",
@@ -932,7 +999,7 @@
       "troops": 10,
       "koku": 0.0,
       "fortification": 1,
-      "port_tier": 3,
+      "port_tier": 2,
       "terrain": "coastal"
     },
     {
@@ -1164,10 +1231,31 @@
       "id": "hariojo",
       "name": "針尾城",
       "owner": "hario",
-      "troops": 220,
-      "koku": 0.1043,
+      "troops": 60,
+      "koku": 0.028,
       "fortification": 1,
-      "port_tier": 1
+      "port_tier": 1,
+      "notes": "針尾氏本城。648天保石→慶長0.028万石"
+    },
+    {
+      "id": "sajigata",
+      "name": "佐志方城",
+      "owner": "hario",
+      "troops": 130,
+      "koku": 0.063,
+      "fortification": 1,
+      "port_tier": 0,
+      "notes": "1560針尾氏領。1447天保石→慶長0.063万石。1572年平戸松浦侵攻で佐志方氏（松浦家臣）が城主となる。950天保石相当に再編。"
+    },
+    {
+      "id": "ushinotake",
+      "name": "牛ノ岳城",
+      "owner": "hario",
+      "troops": 30,
+      "koku": 0.013,
+      "fortification": 1,
+      "port_tier": 0,
+      "notes": "針尾氏領。302天保石→慶長0.013万石"
     },
     {
       "id": "koujirojo",
@@ -1200,7 +1288,7 @@
     {
       "id": "yokose",
       "name": "横瀬浦",
-      "owner": "omura",
+      "owner": "sawamori",
       "troops": 30,
       "koku": 0.0049,
       "fortification": 1,
@@ -1226,6 +1314,21 @@
     }
   ],
   "events": [
+    {
+      "year": 1561,
+      "month": 8,
+      "type": "narration",
+      "message": "【史実】宮の前事件: 平戸で松浦家臣がポルトガル商船を襲撃。船長ほか13名が殺される。ポルトガル船は平戸を去り、新たな寄港地を求め始めた。"
+    },
+    {
+      "year": 1563,
+      "month": 8,
+      "type": "change_port_tier",
+      "id": "yokose",
+      "port_tier": 0,
+      "skip_if_neutralized": ["hario", "goto"],
+      "message": "【史実】横瀬浦焼討ち: 針尾伊賀守が針尾瀬戸で大村の使者・朝長新助を殺害。後藤貴明が同時に大村城下を襲撃。混乱に乗じた豊後商人が横瀬浦を焼き払い、わずか1年で南蛮港が廃港となった。"
+    },
     {
       "year": 1561,
       "month": 4,
@@ -1267,7 +1370,7 @@
     },
     {
       "year": 1562,
-      "month": 6,
+      "month": 7,
       "type": "upgrade_port_conditional",
       "conditions": {
         "territory_owner": {
@@ -1285,7 +1388,7 @@
       },
       "if_false": {
         "id": "yokose",
-        "port_tier": 2
+        "port_tier": 3
       },
       "if_true_message": "ポルトガル船が口之津に入港した！有馬家が南蛮貿易の主導権を握った。",
       "if_false_message": "ポルトガル船が横瀬浦に入港した。大村純忠が南蛮貿易の窓口を確保した。"
@@ -1303,6 +1406,23 @@
       "type": "rename_territory",
       "id": "omurajo",
       "new_name": "玖島城"
+    },
+    {
+      "year": 1572,
+      "month": 1,
+      "type": "npc_war",
+      "attacker": "matsuura",
+      "defender": "hario",
+      "skip_if_neutralized": ["hario"],
+      "result": [
+        {
+          "type": "transfer_territory",
+          "from": "hario",
+          "to": "matsuura",
+          "territories": ["sajigata"]
+        }
+      ],
+      "message": "【史実】平戸松浦氏の侵攻により、佐志方城が松浦家臣・佐志方氏の支配下に入った。針尾氏は針尾島に追い詰められる。"
     }
   ]
 }

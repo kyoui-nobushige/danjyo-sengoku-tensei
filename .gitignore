@@ -6,7 +6,6 @@ startup_error.txt
 config.py
 .env
 map_state.json
-map_adjacency.html
 images/
 tools/
 compare_llm.py

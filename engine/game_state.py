@@ -133,6 +133,7 @@ class GameState:
     win_condition: dict = field(default_factory=dict)
     win_message: str = ""
     lose_message: str = ""
+    scenario_id: str = "hizen"
 
     def record_player_action(self, action: str) -> None:
         self.player_action_history.append(f"T{self.turn}: {action}")
@@ -315,6 +316,15 @@ class GameState:
                         msg = ev.get("message", "")
                         if msg:
                             messages.append(msg)
+                elif ev["type"] == "change_port_tier":
+                    skip_list = ev.get("skip_if_neutralized", [])
+                    if not any(self._is_target_neutralized(wid) for wid in skip_list):
+                        t_target = self.territories.get(ev.get("id", ""))
+                        if t_target:
+                            t_target.port_tier = ev.get("port_tier", 0)
+                            msg = ev.get("message", "")
+                            if msg:
+                                messages.append(msg)
                 elif ev["type"] == "narration":
                     skip_list = ev.get("skip_if_neutralized", [])
                     if not any(self._is_target_neutralized(wid) for wid in skip_list):
@@ -347,26 +357,49 @@ class GameState:
         w.loyalty_to_liege = max(0, w.loyalty_to_liege - delta)
         return delta
 
+    def all_indirect_vassals(self, wid: str) -> set[str]:
+        """直接・間接を含む全従属国IDを返す（忠誠>0のみ・循環防止付き）。"""
+        result: set[str] = set()
+        queue = [wid]
+        while queue:
+            current = queue.pop()
+            for w in self.warlords.values():
+                if w.id in result:
+                    continue
+                if w.liege == current and not w.is_defeated and w.loyalty_to_liege > 0:
+                    result.add(w.id)
+                    queue.append(w.id)
+        return result
+
+    def liege_chain(self, wid: str) -> list[str]:
+        """wid の上位宗主チェーンを返す（直接liege→その上…）。循環防止付き。"""
+        chain: list[str] = []
+        seen: set[str] = {wid}
+        current = self.warlords.get(wid)
+        while current and current.liege and current.liege not in seen:
+            seen.add(current.liege)
+            chain.append(current.liege)
+            current = self.warlords.get(current.liege)
+        return chain
+
     def _is_target_neutralized(self, wid: str) -> bool:
-        """対象が滅亡済みまたはプレイヤーの従属下にある場合True。"""
+        """対象が滅亡済みまたはプレイヤーの従属下（直接・間接）にある場合True。"""
         w = self.warlords.get(wid)
         if w is None or w.is_defeated:
             return True
-        if w.liege == self.player_id:
+        # プレイヤーの全間接従属ツリーに含まれるか
+        if wid in self.all_indirect_vassals(self.player_id):
             return True
-        player_vassals = {ow.id for ow in self.warlords.values() if ow.liege == self.player_id}
-        return w.liege in player_vassals
+        # 対象の宗主チェーンにプレイヤーが含まれるか
+        return self.player_id in self.liege_chain(wid)
 
     def warlord_rank(self, wid: str) -> str:
-        """石高と従属勢力数から大名ランクを返す。"""
+        """石高と従属勢力数（直接・間接）から大名ランクを返す。"""
         w = self.warlords.get(wid)
         if w is None or w.is_defeated:
             return ""
         koku = w.total_koku(self)
-        subordinates = sum(
-            1 for ow in self.warlords.values()
-            if ow.liege == wid and not ow.is_defeated and ow.warlord_type == "vassal"
-        )
+        subordinates = len(self.all_indirect_vassals(wid))
         if koku < 1.0:
             return "国人"
         if subordinates >= 1:
@@ -556,6 +589,9 @@ def load_scenario(path: str) -> GameState:
         )
         external_powers[ep.id] = ep
 
+    import os as _os
+    scenario_id = _os.path.basename(path).replace(".json", "").split("_")[0]
+
     return GameState(
         year=data["year"],
         month=data["month"],
@@ -568,6 +604,7 @@ def load_scenario(path: str) -> GameState:
         win_condition=data.get("win_condition", {}),
         win_message=data.get("win_message", ""),
         lose_message=data.get("lose_message", ""),
+        scenario_id=scenario_id,
     )
 
 

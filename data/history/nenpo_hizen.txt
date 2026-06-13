@@ -1,0 +1,45 @@
+【肥前・九州戦国史 総合年表】
+# 書式: 年/月|内容|requires:条件（月不明の場合は年のみ）
+# 条件: warlord_alive:ID / warlord_dead:ID / relation_hostile:ID1,ID2 / koku_gt:ID,値
+
+■ 1559-1562（第1チャンク）
+1559|隆信が少弐冬尚を自害に追い込み少弐氏を滅ぼす。宗麟が九州探題に補任される。
+1560|【ゲーム開始】龍造寺は千葉胤頼を攻め滅ぼす。龍造寺は東肥前支配拡大を最優先とする。
+1561/4|川上峡合戦。隆信が神代勝利（くましろ）に勝利。勝利は波佐見へ逃亡するが12月に再び山内に復帰。|requires:warlord_alive:miyashiro,relation_hostile:ryuzoji,miyashiro
+1561/8|平戸で宮の前事件が発生。松浦家臣がポルトガル商船を襲撃、船長ほか13名殺害。南蛮貿易の拠点が平戸から離れ始める。|requires:warlord_alive:matsuura
+1562|龍造寺隆信と神代勝利が和睦。|requires:warlord_alive:miyashiro,warlord_alive:ryuzoji
+1562/7|大村純忠が横瀬浦を開港。ポルトガル船が平戸を去り横瀬浦を新港に選ぶ。免税・布教の自由など特権を付与。|requires:warlord_alive:omura
+
+■ 1563-1565（第2チャンク）
+1563|大村純忠が洗礼を受け日本初のキリシタン大名となる。|requires:warlord_alive:omura
+1563/8|横瀬浦焼討ち。針尾伊賀守が針尾瀬戸で大村の使者・朝長新助を殺害。後藤貴明が同時に大村城下を襲撃。豊後商人が横瀬浦を焼き払い廃港となる。|requires:warlord_alive:hario,warlord_alive:goto,warlord_alive:omura
+1563/9|丹坂峠の戦い。龍造寺隆信 vs 有馬・大村連合軍。有馬義貞が島原から追放される。|requires:warlord_alive:ryuzoji,warlord_alive:arima,koku_gt:arima,0.3
+1564|有馬晴純が義貞を追放し家督を剥奪。義純が継承。|requires:warlord_alive:haruzumi,warlord_alive:arima
+1565|神代勝利（くましろ）、死去。|requires:warlord_alive:miyashiro
+1565|平戸松浦と宗家松浦が和睦。宗家松浦が事実上降伏する。|requires:warlord_alive:matsuura
+
+■ 1566-1568（第3チャンク）
+1566|有馬晴純、死去。|requires:warlord_alive:haruzumi
+1568|平戸松浦隆信、隠居。|requires:warlord_alive:matsuura
+
+■ 1569-1571（第4チャンク）
+1569|大友宗麟が肥前へ侵攻。久津峠の戦い。|requires:warlord_alive:otomo,relation_hostile:otomo,ryuzoji
+1570|今山の戦い。鍋島直茂の奇襲により龍造寺軍が大友軍を撃退。|requires:warlord_alive:ryuzoji,warlord_alive:otomo
+1570|長崎をイエズス会に提供。有馬義貞が義純に家督譲渡。|requires:warlord_alive:arima
+1571|神代長良が龍造寺家臣となる。|requires:warlord_dead:miyashiro
+
+■ 1572-1574（第5チャンク）
+1572/1|佐志方城合戦。平戸松浦氏が佐志方城を針尾氏から奪取。|requires:warlord_alive:matsuura
+1572|三城七騎籠り。大村純忠が三城城で襲撃される。|requires:warlord_alive:omura
+1573|有馬義貞が大村純忠に棄教を勧める。|requires:warlord_alive:arima,warlord_alive:omura
+
+■ 1575-1578（第6チャンク）
+1576|有馬義貞が洗礼を受ける。|requires:warlord_alive:arima
+1577|有馬義貞、死去。|requires:warlord_alive:arima
+1578|隆信が有馬氏を降し肥前統一を完成させる。耳川の戦いで大友軍が大敗。|requires:warlord_alive:ryuzoji
+
+■ 1579以降
+1580|隆信が家督を政家に譲り隠居。大村純忠が長崎・茂木をイエズス会に寄進。
+1584|沖田畷の戦い。龍造寺隆信は島津・有馬連合軍に敗れ、戦死。|requires:warlord_alive:ryuzoji
+1587|豊臣秀吉の九州平定。大友宗麟・大村純忠が相次いで死去。
+1615|一国一城令により、各地の山城が破壊される。

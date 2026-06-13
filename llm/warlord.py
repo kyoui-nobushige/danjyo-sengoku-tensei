@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from llm.base import BaseLLM, LLMMessage
-from llm.history_context import build_historical_pressure
+from llm.history_context import build_historical_pressure, build_nenpo_context
 
 if TYPE_CHECKING:
     from engine.game_state import GameState, Warlord
@@ -202,7 +202,7 @@ WARLORD_PERSONAS: dict[str, str] = {
 """,
 
 "miyashiro": """
-あなたは神代勝利（1511-1565）です。
+あなたは神代勝利（くましろ かつとし、1511-1565）です。
 肥前神埼郡・三瀬城主。龍造寺隆信と直接抗争する老練な武将。
 
 【人物像】
@@ -724,7 +724,7 @@ WARLORD_PERSONA_SHORT: dict[str, str] = {
     "yoshimoto":  "名門の誇り・慎重・仲裁好み。格下には強気。兵力で勝れば動く。",
     "yoshitatsu": "疑心暗鬼・守備重視。内政を固め、確実な状況でのみ動く。",
     "arima":      "南蛮貿易志向・柔軟な外交。龍造寺を警戒しつつ勢力拡大を狙う。",
-    "haresumi":   "有馬の老将・温厚。守りを固めつつ有馬一族の結束を優先する。",
+    "haruzumi":   "有馬の老将・温厚。守りを固めつつ有馬一族の結束を優先する。",
     "ryuzoji":    "猪突猛進・武力重視。弱いと見れば即攻撃。強敵には慎重に備える。",
     "goto":       "龍造寺の従属・実利主義。強者に従いつつ機をうかがう。",
     "jingashiro": "松浦水軍・独立志向。海上交易と水軍力を背景に立ち回る。",
@@ -764,21 +764,15 @@ def _build_warlord_summary(state: "GameState", warlord: "Warlord") -> str:
     koku = warlord.total_koku(state)
     persona_short = WARLORD_PERSONA_SHORT.get(warlord.id, f"{warlord.name}は状況に応じて行動する。")
 
-    # 従属関係（忠誠度が残っている場合のみ保護。造反（0以下）なら臨戦扱い）
-    my_vassals = {
-        w.id for w in state.warlords.values()
-        if w.liege == warlord.id and not w.is_defeated and w.loyalty_to_liege > 0
-    }
+    # 従属関係（直接・間接を含む全ツリー。造反（忠誠0以下）は臨戦扱い）
+    my_vassals = state.all_indirect_vassals(warlord.id)
     rebel_vassals = {
         w.id for w in state.warlords.values()
         if w.liege == warlord.id and not w.is_defeated and w.loyalty_to_liege <= 0
     }
-    liege_protected = (
-        {warlord.liege}
-        if warlord.liege and state.warlords.get(warlord.liege) and warlord.loyalty_to_liege > 0
-        else set()
-    )
-    protected_owners = my_vassals | liege_protected
+    # 宗主チェーン全体も保護（自分が造反中なら除外）
+    liege_chain = state.liege_chain(warlord.id) if warlord.loyalty_to_liege > 0 else []
+    protected_owners = my_vassals | set(liege_chain)
 
     # 攻撃候補（宗主国・従属国は除外）
     attack_targets = []
@@ -816,8 +810,14 @@ def _build_warlord_summary(state: "GameState", warlord: "Warlord") -> str:
         else:
             lines.append(f"  旧宗主国: {liege_name}[{warlord.liege}]（忠誠0・造反・攻撃可）")
     if my_vassals:
-        vnames = [state.warlords[vid].name for vid in my_vassals if vid in state.warlords]
-        lines.append(f"  従属国: {' / '.join(vnames)}（攻撃禁止）")
+        direct = {w.id for w in state.warlords.values() if w.liege == warlord.id and not w.is_defeated and w.loyalty_to_liege > 0}
+        indirect = my_vassals - direct
+        vnames = [state.warlords[vid].name for vid in direct if vid in state.warlords]
+        inames = [state.warlords[vid].name for vid in indirect if vid in state.warlords]
+        if vnames:
+            lines.append(f"  直属従属国: {' / '.join(vnames)}（攻撃禁止）")
+        if inames:
+            lines.append(f"  間接従属国: {' / '.join(inames)}（攻撃禁止）")
     if rebel_vassals:
         rnames = [state.warlords[vid].name for vid in rebel_vassals if vid in state.warlords]
         lines.append(f"  造反中の従属国: {' / '.join(rnames)}（攻撃可・討伐推奨）")
@@ -841,13 +841,18 @@ def get_all_ai_actions_batch(
 
     summaries = "\n\n".join(_build_warlord_summary(state, w) for w in warlords)
 
+    # 年表（シナリオ共通）3年チャンク・条件チェック付き
+    scenario_id = getattr(state, "scenario_id", "hizen")
+    nenpo = build_nenpo_context(state.year, state.month, state, scenario_id)
+
     # 史実圧力（代表武将のみ）
     pressures = []
     for w in warlords[:4]:
         p = build_historical_pressure(w.id, state.year)
         if p.strip():
             pressures.append(f"[{w.name}] {p.strip()}")
-    hist_block = ("【史実の圧力】\n" + "\n".join(pressures)) if pressures else ""
+    pressure_text = ("【史実の圧力（各武将）】\n" + "\n".join(pressures)) if pressures else ""
+    hist_block = "\n\n".join(filter(None, [nenpo, pressure_text]))
 
     system = AI_BATCH_SYSTEM_TEMPLATE.format(
         game_context=state.to_context_summary(),
