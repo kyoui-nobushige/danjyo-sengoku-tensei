@@ -215,8 +215,8 @@ def main() -> None:
     missing = missing_warlords(scenario_warlord_ids)
 
     def _pick_llm(label: str, default_hint: str = ""):
-        providers = {"1": "anthropic", "2": "gemini", "3": "lmstudio", "4": "ollama"}
-        cli.show_message(f"\n【{label}】 1:Claude  2:Gemini  3:LMStudio  4:Ollama{default_hint}", "bold cyan")
+        providers = {"1": "anthropic", "2": "gemini", "3": "lmstudio", "4": "ollama", "5": "agent"}
+        cli.show_message(f"\n【{label}】 1:Claude  2:Gemini  3:LMStudio  4:Ollama  5:Agent（ファイル経由）{default_hint}", "bold cyan")
         choice = cli.console.input("[dim]番号を入力 (Enterでデフォルト): [/dim]").strip()
         provider = providers.get(choice, config.LLM_PROVIDER)
         config.LLM_PROVIDER = provider
@@ -226,6 +226,8 @@ def main() -> None:
             from llm.lmstudio_llm import LMStudioLLM; return LMStudioLLM()
         elif provider == "ollama":
             from llm.ollama_llm import OllamaLLM; return OllamaLLM()
+        elif provider == "agent":
+            from llm.agent_llm import AgentLLM; return AgentLLM()
         else:
             from llm.anthropic_llm import AnthropicLLM; return AnthropicLLM()
 
@@ -257,7 +259,8 @@ def main() -> None:
             while state.pending_diplomacy:
                 offer = state.pending_diplomacy.pop(0)
                 response = cli.show_diplomacy_offer(
-                    offer["from_name"], offer["narration"], offer["relation_delta"]
+                    offer["from_name"], offer["narration"], offer["relation_delta"],
+                    message=offer.get("message", "")
                 )
                 if response == "accept":
                     state.change_relation(state.player_id, offer["from_id"], offer["relation_delta"])

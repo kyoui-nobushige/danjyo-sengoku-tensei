@@ -544,6 +544,7 @@ class WarlordAIAction:
     target_id: str     # 対象のwarlord_id or territory_id
     narration: str     # ゲームログ用テキスト
     relation_delta: int = 0
+    message: str = ""  # 外交時: 使者が伝える言葉・提案内容
 
 
 # ── 外交LLM呼び出し ───────────────────────────────────────────────
@@ -674,7 +675,8 @@ AI_ACTION_SYSTEM_TEMPLATE = """{persona}
   "action_type": "diplomacy|attack|develop|wait",
   "target_id": "対象のwarlord_idまたはterritory_id（なければ空文字）",
   "narration": "行動の説明（ゲームログ用、50文字以内、三人称）",
-  "relation_delta": -10から10の整数（外交時のみ）
+  "relation_delta": -10から10の整数（外交時のみ）,
+  "message": "外交時のみ: 使者が伝える言葉・提案内容（戦国口調で100文字以内。同盟申し入れ・共闘提案・和睦など具体的に）"
 }}
 
 選択肢:
@@ -711,6 +713,7 @@ def _parse_ai_action(raw: str, warlord_id: str) -> WarlordAIAction:
                 target_id=data.get("target_id", ""),
                 narration=data.get("narration", "様子を見ている。"),
                 relation_delta=int(data.get("relation_delta", 0)),
+                message=data.get("message", ""),
             )
     except Exception:
         pass
@@ -752,7 +755,7 @@ AI_BATCH_SYSTEM_TEMPLATE = """\
 
 以下のJSON形式のみで返答せよ（余分なテキスト一切不要）:
 {{
-  "warlord_id": {{"action_type": "attack|diplomacy|develop|wait", "target_id": "対象ID（なければ空）", "narration": "行動説明（30文字以内・三人称）", "relation_delta": 0}}
+  "warlord_id": {{"action_type": "attack|diplomacy|develop|wait", "target_id": "対象ID（なければ空）", "narration": "行動説明（30文字以内・三人称）", "relation_delta": 0, "message": "外交時のみ: 使者の言葉（戦国口調・50文字以内）"}}
 }}
 """
 
@@ -874,6 +877,7 @@ def get_all_ai_actions_batch(
                     target_id=v.get("target_id", ""),
                     narration=v.get("narration", ""),
                     relation_delta=int(v.get("relation_delta", 0)),
+                    message=v.get("message", ""),
                 )
     except Exception:
         pass
@@ -1333,6 +1337,12 @@ _ECONOMIC_ADVISOR_ADDON = """
   （江戸時代・現代の知識は持っていないが、話の筋が通れば前向きに検討する）
 ・数字は必ず出典（「経済状況の見積もりによれば」など）に言及せず、
   自分が把握している情報として自然に語れ
+
+【没入感を保つための禁止事項】
+・「関係値」「石高」「兵力」「友好（数字）」などのゲームデータ用語をそのまま口にしない
+・数値を引用する場合は自然な言葉に変換する
+  禁止例：「関係値は友好（40）にあり」「兵力1340」
+  正しい例：「有馬殿とは今や友好の間柄」「龍造寺は一万三千を超える大軍を擁し」
 """
 
 

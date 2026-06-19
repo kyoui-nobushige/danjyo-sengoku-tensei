@@ -52,11 +52,13 @@ def run_ai_turns(state: "GameState", llm: "BaseLLM | None" = None) -> list[str]:
             target_id   = llm_act.target_id
             narration   = llm_act.narration
             rel_delta   = llm_act.relation_delta
+            message     = llm_act.message
         else:
             # LLMが行動を返さなかった武将はルールベース
             action_type, target_id, narration, rel_delta = _decide_action(state, warlord.id)
+            message = ""
 
-        result_msg = _execute_action(state, warlord.id, action_type, target_id, narration, rel_delta)
+        result_msg = _execute_action(state, warlord.id, action_type, target_id, narration, rel_delta, message)
         if result_msg:
             state.add_log(warlord.id, result_msg)
             messages.append(f"【{warlord.name}】{result_msg}")
@@ -143,6 +145,7 @@ def _execute_action(
     target_id: str,
     narration: str,
     rel_delta: int,
+    message: str = "",
 ) -> str:
     warlord = state.warlords[warlord_id]
 
@@ -158,6 +161,7 @@ def _execute_action(
                     "from_name": warlord.name,
                     "relation_delta": rel_delta,
                     "narration": narration or f"{warlord.name}から使者が参りました。",
+                    "message": message,
                 })
                 return f"{warlord.name}から使者が参りました。"
             state.change_relation(warlord_id, target_id, rel_delta)

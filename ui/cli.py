@@ -1094,10 +1094,11 @@ def get_advisor_question(is_continuation: bool = False) -> str:
     return _input("  [dim]（空欄で評定に戻る）[/dim] > ").strip()
 
 
-def show_diplomacy_offer(from_name: str, narration: str, rel_delta: int) -> str:
+def show_diplomacy_offer(from_name: str, narration: str, rel_delta: int, message: str = "") -> str:
     """AIからプレイヤーへの使者を表示し、応答を返す（'accept'/'ignore'/'reject'）。"""
+    msg_line = f"\n[italic]\"{message}\"[/italic]\n" if message else ""
     console.print(Panel(
-        f"[bold]{narration}[/bold]\n\n"
+        f"[bold]{narration}[/bold]{msg_line}\n"
         f"  [Y] 受け入れる（関係値 [green]+{rel_delta}[/green]）\n"
         f"  [N] 無視する（変化なし）\n"
         f"  [R] 拒絶する（関係値 [red]-10[/red]）",

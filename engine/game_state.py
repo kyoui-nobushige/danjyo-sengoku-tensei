@@ -37,6 +37,8 @@ class Territory:
     industries: list = field(default_factory=list)          # 建設済み産業IDリスト
     under_construction: str = ""  # 建設中の産業ID（空文字=なし）
     construction_turns_left: int = 0  # 残り建設ターン数
+    salt_village: str = ""       # 塩田の史実村名（例: "雪浦村・宮村"）
+    salt_area_text: str = ""     # 塩田の史実面積テキスト（例: "2町2反1畝13.5歩"）
 
     def __post_init__(self):
         if self.population == 0 and self.koku > 0:
@@ -248,10 +250,10 @@ class GameState:
             ind_inc = industry_income_summary(t)
             gold_income += ind_inc["gold"]
             food_income += ind_inc["food"]
-        # 消費: 平時は兵力×0.5石/月（出陣・籠城時は別途）
+        # 消費: 平時は兵力×1/12石/月（1石=1人1年分）
         food_consumption = int(sum(
             t.troops for t in self.territories.values() if t.owner == warlord_id
-        ) * 0.5)
+        ) / 12)
         return {
             "food_income": food_income,
             "food_consumption": food_consumption,
@@ -565,6 +567,8 @@ def load_scenario(path: str) -> GameState:
             is_coast=td.get("is_coast", td.get("port_tier", 0) > 0),
             km_to_coast=td.get("km_to_coast", 0),
             industries=td.get("industries", []),
+            salt_village=td.get("salt_village", ""),
+            salt_area_text=td.get("salt_area_text", ""),
         )
         territories[t.id] = t
 

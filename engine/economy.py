@@ -1,4 +1,4 @@
-"""
+﻿"""
 経済状態モジュール
 
 塩・商品の生産量と距離別価格を計算し、軍師プロンプトに渡す経済コンテキストを生成する。
@@ -92,13 +92,21 @@ def build_economic_context(state: GameState) -> str:
     if salt_farms or salt_wip:
         lines.append("【塩の生産状況（プレイヤー領）】")
         for t in salt_farms:
-            lines.append(f"  {t.name}: 流下式塩田 稼働中 / 月{SALT_PRODUCTION_PER_FARM}升")
+            village = getattr(t, "salt_village", "")
+            area = getattr(t, "salt_area_text", "")
+            koku_monthly = round(SALT_PRODUCTION_PER_FARM / 100, 2)
+            loc = f"{t.name}下{village}の塩田" if village else f"{t.name}の塩田"
+            area_note = f"（{area}）" if area else ""
+            lines.append(f"  {loc}{area_note}: 流下式 稼働中 / 月産{SALT_PRODUCTION_PER_FARM}升（約{koku_monthly}石相当）")
         for t in salt_wip:
             rem = getattr(t, "construction_turns_left", 0)
-            lines.append(f"  {t.name}: 流下式塩田 建設中（あと{rem}ヶ月）")
-        total = len(salt_farms) * SALT_PRODUCTION_PER_FARM
-        if total:
-            lines.append(f"  月産合計: {total}升")
+            village = getattr(t, "salt_village", "")
+            loc = f"{t.name}下{village}の塩田" if village else f"{t.name}の塩田"
+            lines.append(f"  {loc}: 流下式塩田 建設中（あと{rem}ヶ月）")
+        total_sho = len(salt_farms) * SALT_PRODUCTION_PER_FARM
+        total_koku = round(total_sho / 100, 2)
+        if total_sho:
+            lines.append(f"  月産合計: {total_sho}升（約{total_koku}石）")
 
     # ── km距離別塩相場 ─────────────────────────────────────
     price_rows: list[tuple[str, str, int, int]] = []  # (城名, 勢力名, km, 価格)

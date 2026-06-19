@@ -1008,7 +1008,10 @@
       "owner": "kosaza",
       "troops": 3,
       "koku": 0.0058,
-      "fortification": 1
+      "fortification": 1,
+      "is_coast": true,
+      "salt_village": "雪浦村・宮村",
+      "salt_area_text": "2町2反1畝13.5歩"
     },
     {
       "id": "hizentanakajo",
