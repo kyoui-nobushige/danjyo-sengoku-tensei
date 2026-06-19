@@ -18,7 +18,7 @@ from rich import box
 if TYPE_CHECKING:
     from engine.game_state import GameState, Warlord
 
-console = Console(force_terminal=True, legacy_windows=False)
+console = Console(force_terminal=True, legacy_windows=False, width=120)
 
 
 def _input(prompt: str) -> str:
