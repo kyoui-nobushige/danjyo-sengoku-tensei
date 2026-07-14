@@ -3,9 +3,39 @@ from dataclasses import dataclass, field
 from typing import Optional
 import json
 import copy
+import os
 
 
 POPULATION_PER_MANOKU = 7000  # 鬼頭宏推計(1600年肥前253200人÷30.99万石)×1560年補正
+
+# 規模ランク（合計石高=万石の下限値、昇順）。Lv.15は上限なし。
+# 複数国統一等で100万石を大きく超える場合は末尾に行を追加する。
+SCALE_RANK_THRESHOLDS = [
+    0,      # Lv.1
+    0.03,   # Lv.2
+    0.06,   # Lv.3
+    0.12,   # Lv.4
+    0.25,   # Lv.5
+    0.5,    # Lv.6
+    1,      # Lv.7
+    2,      # Lv.8
+    4,      # Lv.9
+    7,      # Lv.10
+    12,     # Lv.11
+    20,     # Lv.12
+    35,     # Lv.13
+    60,     # Lv.14
+    100,    # Lv.15
+]
+
+
+def scale_rank(total_koku: float) -> int:
+    """合計石高（万石）からSCALE_RANK_THRESHOLDSに基づく規模ランク(1〜)を返す。"""
+    rank = 1
+    for i, threshold in enumerate(SCALE_RANK_THRESHOLDS):
+        if total_koku >= threshold:
+            rank = i + 1
+    return rank
 
 
 @dataclass
@@ -39,6 +69,8 @@ class Territory:
     construction_turns_left: int = 0  # 残り建設ターン数
     salt_village: str = ""       # 塩田の史実村名（例: "雪浦村・宮村"）
     salt_area_text: str = ""     # 塩田の史実面積テキスト（例: "2町2反1畝13.5歩"）
+    base_type: str = "castle"    # "castle" | "village" | "port"
+    parent_castle: str = ""      # 所属城ID（村・港の場合）
 
     def __post_init__(self):
         if self.population == 0 and self.koku > 0:
@@ -174,6 +206,43 @@ class GameState:
     def add_log(self, actor: str, text: str) -> None:
         self.log.append(LogEntry(self.turn, self.year, self.month, actor, text))
 
+    def is_absorbed_child(self, t: "Territory") -> bool:
+        """parent_castle が設定されていて、かつ親城と所有者が同じ場合のみ
+        「親城の石高に吸収される子」とみなす（他勢力に奪われた飛び地は独立して収入計上する）。"""
+        if not t.parent_castle:
+            return False
+        parent = self.territories.get(t.parent_castle)
+        return parent is not None and parent.owner == t.owner
+
+    def compute_total_koku(self) -> dict[str, float]:
+        """parent_castleチェーンに沿って配下の村・港の石高を積み上げた「規模（合計石高）」を全領地分計算する。
+        経済的な収入計算に使う（マップ表示・防御ボーナスとは別軸）。
+        親城と所有者が同じ村・港は自分の石高を単独では収入計上せず親城側の合計に含める。
+        所有者が異なる（奪われた）飛び地は独立した単位として扱う。"""
+        children: dict[str, list[str]] = {}
+        for t in self.territories.values():
+            if self.is_absorbed_child(t):
+                children.setdefault(t.parent_castle, []).append(t.id)
+
+        totals: dict[str, float] = {}
+
+        def resolve(tid: str, visiting: set) -> float:
+            if tid in totals:
+                return totals[tid]
+            if tid in visiting:
+                return 0.0  # 循環参照ガード
+            visiting = visiting | {tid}
+            t = self.territories.get(tid)
+            if t is None:
+                return 0.0
+            total = t.koku + sum(resolve(cid, visiting) for cid in children.get(tid, []))
+            totals[tid] = total
+            return total
+
+        for tid in self.territories:
+            resolve(tid, set())
+        return totals
+
     def advance_turn(self) -> None:
         self.turn += 1
         self.month += 1
@@ -219,27 +288,34 @@ class GameState:
                     w.salt_stock += salt_monthly
 
         # 収入計算（月次）
+        total_koku_map = self.compute_total_koku()
         for wid, w in self.warlords.items():
             if w.is_defeated:
                 continue
-            inc = self._calc_income(wid)
+            inc = self._calc_income(wid, total_koku_map)
             new_food = max(0, w.food + inc["food_net"])
             max_food = int(sum(
-                t.koku for t in self.territories.values() if t.owner == wid
+                (0.0 if self.is_absorbed_child(t) else total_koku_map.get(t.id, t.koku))
+                for t in self.territories.values() if t.owner == wid
             ) * 400 * 12)
             w.food = min(new_food, max(max_food, 1))
             w.treasury += inc["gold"]
 
-    def _calc_income(self, warlord_id: str) -> dict:
-        """武将の月次収入を項目別に計算して返す。"""
+    def _calc_income(self, warlord_id: str, total_koku_map: dict[str, float] | None = None) -> dict:
+        """武将の月次収入を項目別に計算して返す。
+        koku（石高）は parent_castle を持つ村・港は単独計上せず、親城側の合計（total_koku_map）に含める。
+        商業・港格・産業収入は領地ごとに従来通り個別計上する。"""
+        if total_koku_map is None:
+            total_koku_map = self.compute_total_koku()
         food_income = 0
         gold_income = 0
         for t in self.territories.values():
             if t.owner != warlord_id:
                 continue
             loyalty_rate = t.loyalty / 100
-            # 兵糧: 1万石→400石/月（忠誠度係数）
-            food_income += int(t.koku * 400 * loyalty_rate)
+            # 兵糧: 1万石→400石/月（忠誠度係数）。親城に吸収される村・港は親の合計に含まれるため0
+            effective_koku = 0.0 if self.is_absorbed_child(t) else total_koku_map.get(t.id, t.koku)
+            food_income += int(effective_koku * 400 * loyalty_rate)
             # 商業収入: 商業レベル×5貫/月（忠誠度係数）
             gold_income += int(t.commerce * 5 * loyalty_rate)
             # 帆別銭: 港格に応じた固定収入（貫文/月）
@@ -482,8 +558,8 @@ ADJACENCY: dict[str, list[str]] = {
     # ── 大村湾岸 ──
     "omurajo":     ["isahaya", "matsutake", "tsunomijo"],
     "yokose":      ["hizenakejo", "kawachiura"],
-    "kawachiura":  ["yokose", "hizentenguzanjo"],
-    "hizentenguzanjo": ["kawachiura"],
+    "kawachiura":  ["yokose", "hizentenguzanjo", "custom_1781941014523"],
+    "hizentenguzanjo": ["kawachiura", "custom_1781941014523"],
     "hariojo":     ["tsunomijo", "iimorijo", "matsutake", "yokose"],
     "tsunomijo": ["isahaya", "omurajo", "hariojo", "tawaraishi"],
     # ── 諫早・深堀 ──
@@ -498,8 +574,15 @@ ADJACENCY: dict[str, list[str]] = {
     "nanatukamaura": ["kosazajo", "nakaurajo", "konourajo"],
     "kudariyamajo":["nakaurajo", "tensakijo", "hizengurosejo"],
     "hizengurosejo":["kudariyamajo"],
-    "tensakijo":   ["kudariyamajo", "hizenakejo"],
-    "hizenakejo":  ["tensakijo", "yokose"],
+    "tensakijo":   ["kudariyamajo", "hizenakejo", "custom_1781940171768"],
+    "hizenakejo":  ["tensakijo", "yokose", "custom_1781940272745"],
+    "custom_1781940171768": ["tensakijo", "custom_1781940272745"],
+    "custom_1781940272745": ["hizenakejo", "custom_1781940171768"],
+    "custom_1781941014523": ["hizentenguzanjo", "kawachiura", "custom_1781941465433"],
+    "custom_1781941282243": ["custom_1781941496927", "custom_1781941465433", "custom_1781941588517"],
+    "custom_1781941465433": ["custom_1781941282243", "custom_1781941496927", "custom_1781941014523"],
+    "custom_1781941496927": ["custom_1781941282243", "custom_1781941465433"],
+    "custom_1781941588517": ["custom_1781941282243"],
     "inakajo":     ["kosazajo", "enoshimajo", "katsuodake", "egawa", "aokatajo"],
     "enoshimajo":  ["inakajo", "hongojo", "katsuodake"],
     "hongojo":     ["enoshimajo", "katsuodake", "kosazajo"],
@@ -515,6 +598,27 @@ ADJACENCY: dict[str, list[str]] = {
     "egawa":       ["aokatajo", "inakajo"],
     "aokatajo":    ["egawa", "inakajo", "katsuodake"],
 }
+
+
+def _merge_custom_adjacency() -> None:
+    """地図の拠点追加サーバー（main.pyの/api/save_map）が書き出す
+    custom_adjacency.json を ADJACENCY へ追加マージする（既存関係は上書きしない）。"""
+    path = os.path.join(os.path.dirname(__file__), "..", "data", "scenarios", "custom_adjacency.json")
+    if not os.path.exists(path):
+        return
+    try:
+        with open(path, encoding="utf-8") as f:
+            extra: dict[str, list[str]] = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return
+    for tid, neighbors in extra.items():
+        bucket = ADJACENCY.setdefault(tid, [])
+        for n in neighbors:
+            if n not in bucket:
+                bucket.append(n)
+
+
+_merge_custom_adjacency()
 
 
 # ── シナリオローダー ───────────────────────────────────────────────
@@ -569,6 +673,8 @@ def load_scenario(path: str) -> GameState:
             industries=td.get("industries", []),
             salt_village=td.get("salt_village", ""),
             salt_area_text=td.get("salt_area_text", ""),
+            base_type=td.get("base_type", "castle"),
+            parent_castle=td.get("parent_castle", ""),
         )
         territories[t.id] = t
 
@@ -660,6 +766,8 @@ def save_game(state: GameState, path: str) -> None:
                 "industries": t.industries,
                 "under_construction": t.under_construction,
                 "construction_turns_left": t.construction_turns_left,
+                "base_type": t.base_type,
+                "parent_castle": t.parent_castle,
             }
             for t in state.territories.values()
         ],
@@ -699,6 +807,8 @@ def write_map_state(state: GameState, path: str) -> None:
         top = w.id if w.is_player else (w.liege if w.liege else w.id)
         factions.setdefault(top, []).append(t.id)
 
+    total_koku_map = state.compute_total_koku()
+
     data = {
         "year": state.year,
         "month": state.month,
@@ -710,7 +820,11 @@ def write_map_state(state: GameState, path: str) -> None:
                 "troops": t.troops,
                 "name": t.name,
                 "koku": t.koku,
+                "total_koku": total_koku_map.get(t.id, t.koku),
+                "rank": scale_rank(total_koku_map.get(t.id, t.koku)),
                 "port_tier": t.port_tier,
+                "base_type": t.base_type,
+                "parent_castle": t.parent_castle,
             }
             for t in state.territories.values()
         },

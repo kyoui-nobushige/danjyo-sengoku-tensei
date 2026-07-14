@@ -214,8 +214,10 @@ def show_turn_header(state: GameState) -> None:
         "",
         "  [[bold cyan]1[/bold cyan]] 外交         [[bold cyan]2[/bold cyan]] 内政・徴兵",
         "  [[bold cyan]3[/bold cyan]] 出陣         [[bold cyan]4[/bold cyan]] 軍師に相談",
-        "  [[bold cyan]5[/bold cyan]] 詳細情報     [[bold cyan]S[/bold cyan]] セーブ   [[bold cyan]M[/bold cyan]] 地図   [[bold cyan]L[/bold cyan]] LLM切替",
+        "  [[bold cyan]5[/bold cyan]] 詳細情報     [[bold cyan]K[/bold cyan]] 【転生者の知識】現代知識を伝える",
+        "  [[bold cyan]S[/bold cyan]] セーブ       [[bold cyan]M[/bold cyan]] 地図   [[bold cyan]L[/bold cyan]] LLM切替",
         "  [[bold green]E[/bold green]] 評定を終える   [[bold green]N[/bold green]] スキップ（次月/数月/次季）",
+        "  [dim]または文字を入力して軍師と直接会話[/dim]",
         "",
     ])
     left_panel = Panel(left_content, border_style="blue", padding=(0, 0))
@@ -305,11 +307,8 @@ def _relation_color(val: int) -> str:
 # ── アクション選択 ────────────────────────────────────────────────
 
 def get_player_action() -> str:
-    while True:
-        choice = _input("  選択 > ").lower()
-        if choice in ("1", "2", "3", "4", "5", "s", "m", "e", "n", "l"):
-            return choice
-        console.print("  [red]1〜5、S、M、L、E、Nのいずれかを入力してください[/red]")
+    choice = _input("  選択（または軍師への発言を入力） > ")
+    return choice.lower() if choice in ("1", "2", "3", "4", "5", "S", "s", "M", "m", "E", "e", "N", "n", "L", "l", "K", "k") else choice
 
 
 # ── 外交 ──────────────────────────────────────────────────────────
@@ -1094,6 +1093,13 @@ def get_advisor_question(is_continuation: bool = False) -> str:
     return _input("  [dim]（空欄で評定に戻る）[/dim] > ").strip()
 
 
+def get_knowledge_input(has_history: bool) -> str:
+    if not has_history:
+        console.print("\n[bold magenta]【転生者の知識伝達】[/bold magenta]")
+        console.print("[dim]現代の知識・技術を軍師に伝えてください。（空Enterで終了）[/dim]")
+    return _input("  あなた > ").strip()
+
+
 def show_diplomacy_offer(from_name: str, narration: str, rel_delta: int, message: str = "") -> str:
     """AIからプレイヤーへの使者を表示し、応答を返す（'accept'/'ignore'/'reject'）。"""
     msg_line = f"\n[italic]\"{message}\"[/italic]\n" if message else ""
@@ -1126,6 +1132,17 @@ def show_advisor_advice(advice: str, advisor_name: str = "藤吉郎") -> None:
         border_style="cyan",
     ))
     console.input("[dim]Enterで続ける...[/dim]")
+
+
+def show_advisor_stream(chunks, advisor_name: str = "藤吉郎") -> str:
+    console.print(f"\n[bold cyan]軍師・{advisor_name}:[/bold cyan] ", end="")
+    full = ""
+    for chunk in chunks:
+        console.print(chunk, end="")
+        full += chunk
+    console.print()
+    console.input("[dim]Enterで続ける...[/dim]")
+    return full
 
 
 # ── ログ・ステータス詳細（[5]用） ─────────────────────────────────

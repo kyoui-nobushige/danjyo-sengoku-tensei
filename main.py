@@ -3,12 +3,204 @@
 """
 import os
 import sys
+import json
+import re
 import threading
 import http.server
 import webbrowser
 
 _map_server = None
 _MAP_PORT = 8765
+
+# 拠点1つ分の初期値（地図の拠点追加フォームでは石高・兵力を入力しないため）
+_NEW_BASE_DEFAULTS = {
+    "village": {"troops": 3, "koku": 0.001, "port_tier": 0},
+    "port":    {"troops": 8, "koku": 0.002, "port_tier": 1},
+    "castle":  {"troops": 10, "koku": 0.003, "port_tier": 0},
+}
+
+
+def _scenario_path(game_dir: str) -> str:
+    return os.path.join(game_dir, "data", "scenarios", "hizen_1560.json")
+
+
+def _custom_adjacency_path(game_dir: str) -> str:
+    return os.path.join(game_dir, "data", "scenarios", "custom_adjacency.json")
+
+
+def _nearest_ids(target_id: str, positions: dict, exclude: set, limit: int) -> list:
+    """lat/lng の単純ユークリッド距離で近い拠点IDを返す（隣接関係の自動推定用）。"""
+    tlat, tlng = positions[target_id]
+    others = [
+        (oid, (tlat - olat) ** 2 + (tlng - olng) ** 2)
+        for oid, (olat, olng) in positions.items()
+        if oid != target_id and oid not in exclude
+    ]
+    others.sort(key=lambda x: x[1])
+    return [oid for oid, _ in others[:limit]]
+
+
+def _merge_adjacency(game_dir: str, tid: str, neighbors: list) -> None:
+    path = _custom_adjacency_path(game_dir)
+    extra = {}
+    if os.path.exists(path):
+        try:
+            with open(path, encoding="utf-8") as f:
+                extra = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            extra = {}
+    bucket = extra.setdefault(tid, [])
+    for n in neighbors:
+        if n not in bucket:
+            bucket.append(n)
+        rev = extra.setdefault(n, [])
+        if tid not in rev:
+            rev.append(tid)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(extra, f, ensure_ascii=False, indent=2)
+
+
+def _rewrite_castles_block(game_dir: str, castles: dict) -> None:
+    """map_adjacency.html 内の `const castles = {...};` を丸ごと書き換える。"""
+    html_path = os.path.join(game_dir, "map_adjacency.html")
+    with open(html_path, encoding="utf-8") as f:
+        html = f.read()
+
+    lines = []
+    for cid, c in castles.items():
+        parts = [f'name:"{c["name"]}"']
+        if c.get("koku") is not None:
+            parts.append(f'koku:{c["koku"]}')
+        parts.append(f'lat:{c["lat"]}')
+        parts.append(f'lng:{c["lng"]}')
+        parts.append(f'owner:"{c["owner"]}"')
+        if c.get("base_type") and c["base_type"] != "castle":
+            parts.append(f'base_type:"{c["base_type"]}"')
+        if c.get("parent_castle"):
+            parts.append(f'parent_castle:"{c["parent_castle"]}"')
+        lines.append(f'  {cid}: {{ {", ".join(parts)} }},')
+
+    new_block = "const castles = {\n" + "\n".join(lines) + "\n};"
+    html = re.sub(r"const castles = \{.*?\};", new_block, html, count=1, flags=re.S)
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html)
+
+
+def _save_map_edit(game_dir: str, castles: dict) -> dict:
+    """ブラウザ地図から送られた拠点データを hizen_1560.json / custom_adjacency.json / map_adjacency.html へ反映する。"""
+    scenario_path = _scenario_path(game_dir)
+    with open(scenario_path, encoding="utf-8") as f:
+        data = json.load(f)
+    existing_by_id = {t["id"]: t for t in data["territories"]}
+    existing_ids = set(existing_by_id)
+    all_ids = existing_ids | set(castles)
+    positions = {cid: (c["lat"], c["lng"]) for cid, c in castles.items()}
+
+    added = []
+    updated = []
+    for cid, c in castles.items():
+        if cid in existing_ids:
+            entry = existing_by_id[cid]
+            changed = False
+
+            name = (c.get("name") or "").strip()
+            if name and entry.get("name") != name:
+                entry["name"] = name
+                changed = True
+
+            owner = c.get("owner")
+            if owner and entry.get("owner") != owner:
+                entry["owner"] = owner
+                changed = True
+
+            koku = c.get("koku")
+            if koku is not None:
+                try:
+                    koku = round(float(koku), 4)
+                except (TypeError, ValueError):
+                    koku = None
+                if koku is not None and koku >= 0 and entry.get("koku") != koku:
+                    entry["koku"] = koku
+                    changed = True
+
+            parent = c.get("parent_castle")
+            if not parent:
+                if entry.pop("parent_castle", None) is not None:
+                    changed = True
+            elif parent != cid and parent in all_ids and entry.get("parent_castle") != parent:
+                entry["parent_castle"] = parent
+                changed = True
+
+            if changed:
+                updated.append(cid)
+            continue
+
+        base_type = c.get("base_type") or "castle"
+        defaults = _NEW_BASE_DEFAULTS.get(base_type, _NEW_BASE_DEFAULTS["castle"])
+        koku = c.get("koku") or defaults["koku"]
+        c["koku"] = koku  # castles側にも確定値を反映し、次回sync時の差分比較で巻き戻らないようにする
+        entry = {
+            "id": cid,
+            "name": c["name"],
+            "owner": c["owner"],
+            "troops": defaults["troops"],
+            "koku": koku,
+            "fortification": 1,
+        }
+        if defaults["port_tier"]:
+            entry["port_tier"] = defaults["port_tier"]
+        if base_type != "castle":
+            entry["base_type"] = base_type
+        if c.get("parent_castle"):
+            entry["parent_castle"] = c["parent_castle"]
+        data["territories"].append(entry)
+        added.append(cid)
+
+        parent = c.get("parent_castle")
+        neighbors = set()
+        if parent and parent in positions:
+            neighbors.add(parent)
+        if not neighbors or ((positions[cid][0] - positions.get(parent, positions[cid])[0]) ** 2
+                              + (positions[cid][1] - positions.get(parent, positions[cid])[1]) ** 2) ** 0.5 > 0.05:
+            neighbors.update(_nearest_ids(cid, positions, exclude={cid}, limit=1))
+        _merge_adjacency(game_dir, cid, sorted(neighbors))
+
+    if added or updated:
+        with open(scenario_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+
+    _rewrite_castles_block(game_dir, castles)
+    return {"added": added, "updated": updated}
+
+
+class _MapRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, *args):
+        pass  # アクセスログを抑制
+
+    def do_POST(self):
+        if self.path != "/api/save_map":
+            self.send_response(404)
+            self.end_headers()
+            return
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length)
+            castles = json.loads(body).get("castles", {})
+            result = _save_map_edit(os.getcwd(), castles)
+            resp = json.dumps({"ok": True, "added": result["added"], "updated": result["updated"]}).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(resp)))
+            self.end_headers()
+            self.wfile.write(resp)
+        except Exception as e:
+            resp = json.dumps({"ok": False, "error": str(e)}).encode("utf-8")
+            self.send_response(500)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(resp)))
+            self.end_headers()
+            self.wfile.write(resp)
 
 
 def _start_map_server(directory: str) -> None:
@@ -17,9 +209,7 @@ def _start_map_server(directory: str) -> None:
     if _map_server is not None:
         return
     os.chdir(directory)
-    handler = http.server.SimpleHTTPRequestHandler
-    handler.log_message = lambda *a: None  # アクセスログを抑制
-    _map_server = http.server.HTTPServer(("127.0.0.1", _MAP_PORT), handler)
+    _map_server = http.server.HTTPServer(("127.0.0.1", _MAP_PORT), _MapRequestHandler)
     t = threading.Thread(target=_map_server.serve_forever, daemon=True)
     t.start()
 
@@ -134,6 +324,7 @@ def main() -> None:
     from engine.turn_manager import run_ai_turns
     from llm.warlord import (
         get_diplomacy_response, get_advisor_advice, chat_with_advisor,
+        chat_knowledge_transfer,
         get_battle_report, ADVISOR_NAMES, WarlordDiplomacyResponse,
     )
     from llm.base import LLMMessage
@@ -244,6 +435,8 @@ def main() -> None:
 
     llm = _pick_llm("ゲーム用LLM")
 
+    _adv_history: list = []
+
     while True:
         # ─ 終了判定 ──────────────────────────────────────────────
         ended, result = state.is_game_over()
@@ -326,7 +519,6 @@ def main() -> None:
             # ─ 軍師に相談（会話ループ） ───────────────────────────
             if action == "4":
                 advisor_name = ADVISOR_NAMES.get(state.player_id, "軍師")
-                _adv_history: list = []
                 while True:
                     question = cli.get_advisor_question(bool(_adv_history))
                     if not question:
@@ -340,6 +532,25 @@ def main() -> None:
                         _handle_llm_error(e, cli)
                         break
                     cli.show_advisor_advice(advice, advisor_name)
+                continue
+
+            # ─ 転生者の知識を伝える ──────────────────────────────────────────
+            if action == "k":
+                advisor_name = ADVISOR_NAMES.get(state.player_id, "軍師")
+                _know_history: list = []
+                while True:
+                    player_input = cli.get_knowledge_input(bool(_know_history))
+                    if not player_input:
+                        break
+                    cli.show_message("考えています...", "dim")
+                    try:
+                        response, _know_history = chat_knowledge_transfer(
+                            llm, state, _know_history, player_input
+                        )
+                    except Exception as e:
+                        _handle_llm_error(e, cli)
+                        break
+                    cli.show_advisor_advice(response, advisor_name)
                 continue
 
             # ─ 内政 ──────────────────────────────────────────────
@@ -795,6 +1006,16 @@ def main() -> None:
                     "cyan",
                 )
                 state.record_player_action(f"{target_warlord.name}と外交（{action_label}）")
+
+            # ─ 自由入力 → 軍師への発言 ───────────────────────────
+            elif action and action not in ("1","2","3","4","5","e","n","l","m","s","k"):
+                advisor_name = ADVISOR_NAMES.get(state.player_id, "軍師")
+                cli.show_message("考えています...", "dim")
+                try:
+                    advice, _adv_history = chat_with_advisor(llm, state, _adv_history, action)
+                    cli.show_advisor_advice(advice, advisor_name)
+                except Exception as e:
+                    _handle_llm_error(e, cli)
 
         # ─ 月処理ループ（通常1回 / スキップ時N回） ─────────────────
         months_to_run = _skip_months if _skip_months > 0 else 1

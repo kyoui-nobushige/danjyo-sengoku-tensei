@@ -832,7 +832,7 @@
     },
     {
       "id": "hasuike",
-      "name": "肥前蓮池城",
+      "name": "蓮池城",
       "owner": "ryuzoji",
       "troops": 270,
       "koku": 1.07,
@@ -853,7 +853,7 @@
       "name": "三瀬城",
       "owner": "miyashiro",
       "troops": 40,
-      "koku": 0.060,
+      "koku": 0.06,
       "fortification": 2,
       "terrain": "highland",
       "km_to_coast": 38,
@@ -919,7 +919,7 @@
       "name": "古湯城",
       "owner": "miyashiro",
       "troops": 115,
-      "koku": 0.160,
+      "koku": 0.16,
       "fortification": 1,
       "terrain": "highland",
       "km_to_coast": 42,
@@ -948,7 +948,7 @@
       "name": "小佐々城",
       "owner": "kosaza",
       "troops": 30,
-      "koku": 0.0443,
+      "koku": 0.044,
       "fortification": 2,
       "port_tier": 2,
       "commerce": 2
@@ -958,7 +958,7 @@
       "name": "平島城",
       "owner": "kosaza",
       "troops": 15,
-      "koku": 0.0006,
+      "koku": 0.001,
       "fortification": 1,
       "port_tier": 1,
       "commerce": 1
@@ -968,7 +968,7 @@
       "name": "江ノ島城",
       "owner": "kosaza",
       "troops": 10,
-      "koku": 0.0033,
+      "koku": 0.003,
       "fortification": 1,
       "port_tier": 1,
       "commerce": 1
@@ -978,7 +978,7 @@
       "name": "本郷城",
       "owner": "kosaza",
       "troops": 10,
-      "koku": 0.0011,
+      "koku": 0.001,
       "fortification": 1,
       "port_tier": 1,
       "commerce": 1
@@ -1000,36 +1000,42 @@
       "koku": 0.0,
       "fortification": 1,
       "port_tier": 2,
-      "terrain": "coastal"
+      "terrain": "coastal",
+      "base_type": "port",
+      "parent_castle": "kosazajo"
     },
     {
       "id": "torigoejo",
       "name": "鳥越城",
       "owner": "kosaza",
       "troops": 3,
-      "koku": 0.0058,
+      "koku": 0.006,
       "fortification": 1,
       "is_coast": true,
       "salt_village": "雪浦村・宮村",
-      "salt_area_text": "2町2反1畝13.5歩"
+      "salt_area_text": "2町2反1畝13.5歩",
+      "salt_irihama_annual_koku": 21.9951,
+      "parent_castle": "kosazajo"
     },
     {
       "id": "hizentanakajo",
       "name": "肥前田中城",
       "owner": "kosaza",
       "troops": 5,
-      "koku": 0.0056,
-      "fortification": 1
+      "koku": 0.006,
+      "fortification": 1,
+      "parent_castle": "kosazajo"
     },
     {
       "id": "konourajo",
       "name": "神浦城",
       "owner": "kosaza",
       "troops": 15,
-      "koku": 0.0127,
+      "koku": 0.013,
       "fortification": 1,
       "port_tier": 1,
-      "terrain": "coastal"
+      "terrain": "coastal",
+      "parent_castle": "kosazajo"
     },
     {
       "id": "kudariyamajo",
@@ -1045,7 +1051,7 @@
       "name": "肥前黒瀬城",
       "owner": "kosaza",
       "troops": 3,
-      "koku": 0.0011,
+      "koku": 0.001,
       "fortification": 1
     },
     {
@@ -1056,6 +1062,76 @@
       "koku": 0.002,
       "fortification": 1,
       "terrain": "highland"
+    },
+    {
+      "id": "custom_1781940171768",
+      "name": "天久保村",
+      "owner": "sawamori",
+      "troops": 3,
+      "koku": 0.001,
+      "fortification": 1,
+      "base_type": "village",
+      "parent_castle": "tensakijo"
+    },
+    {
+      "id": "custom_1781940272745",
+      "name": "面高村",
+      "owner": "sawamori",
+      "troops": 3,
+      "koku": 0.001,
+      "fortification": 1,
+      "base_type": "village",
+      "parent_castle": "hizenakejo"
+    },
+    {
+      "id": "custom_1781941014523",
+      "name": "八木原村",
+      "owner": "omura",
+      "troops": 3,
+      "koku": 0.001,
+      "fortification": 1,
+      "base_type": "village",
+      "parent_castle": "hizentenguzanjo"
+    },
+    {
+      "id": "custom_1781941282243",
+      "name": "八幡山城",
+      "owner": "omura",
+      "troops": 10,
+      "koku": 0.003,
+      "fortification": 1,
+      "parent_castle": "omurajo"
+    },
+    {
+      "id": "custom_1781941465433",
+      "name": "大串浦",
+      "owner": "omura",
+      "troops": 10,
+      "koku": 0.002,
+      "fortification": 1,
+      "port_tier": 1,
+      "base_type": "port",
+      "parent_castle": "custom_1781941282243"
+    },
+    {
+      "id": "custom_1781941496927",
+      "name": "大串村",
+      "owner": "omura",
+      "troops": 3,
+      "koku": 0.001,
+      "fortification": 1,
+      "base_type": "village",
+      "parent_castle": "custom_1781941282243"
+    },
+    {
+      "id": "custom_1781941588517",
+      "name": "鳥加村",
+      "owner": "omura",
+      "troops": 3,
+      "koku": 0.001,
+      "fortification": 1,
+      "base_type": "village",
+      "parent_castle": "custom_1781941282243"
     },
     {
       "id": "tensakijo",
@@ -1286,32 +1362,38 @@
       "koku": 0.18,
       "fortification": 1,
       "port_tier": 1,
-      "has_foundry": true
+      "has_foundry": true,
+      "base_type": "port",
+      "parent_castle": "hinoe"
     },
     {
       "id": "yokose",
       "name": "横瀬浦",
       "owner": "sawamori",
       "troops": 30,
-      "koku": 0.0049,
+      "koku": 0.005,
       "fortification": 1,
-      "port_tier": 1
+      "port_tier": 1,
+      "base_type": "port",
+      "parent_castle": "konourajo"
     },
     {
       "id": "kawachiura",
       "name": "河内浦",
       "owner": "kosaza",
       "troops": 20,
-      "koku": 0.0126,
+      "koku": 0.013,
       "fortification": 1,
-      "port_tier": 1
+      "port_tier": 1,
+      "base_type": "port",
+      "parent_castle": "kosazajo"
     },
     {
       "id": "hizentenguzanjo",
       "name": "肥前天狗山城",
       "owner": "kosaza",
       "troops": 10,
-      "koku": 0.0072,
+      "koku": 0.007,
       "fortification": 1,
       "port_tier": 0
     }
@@ -1329,7 +1411,10 @@
       "type": "change_port_tier",
       "id": "yokose",
       "port_tier": 0,
-      "skip_if_neutralized": ["hario", "goto"],
+      "skip_if_neutralized": [
+        "hario",
+        "goto"
+      ],
       "message": "【史実】横瀬浦焼討ち: 針尾伊賀守が針尾瀬戸で大村の使者・朝長新助を殺害。後藤貴明が同時に大村城下を襲撃。混乱に乗じた豊後商人が横瀬浦を焼き払い、わずか1年で南蛮港が廃港となった。"
     },
     {
@@ -1416,13 +1501,17 @@
       "type": "npc_war",
       "attacker": "matsuura",
       "defender": "hario",
-      "skip_if_neutralized": ["hario"],
+      "skip_if_neutralized": [
+        "hario"
+      ],
       "result": [
         {
           "type": "transfer_territory",
           "from": "hario",
           "to": "matsuura",
-          "territories": ["sajigata"]
+          "territories": [
+            "sajigata"
+          ]
         }
       ],
       "message": "【史実】平戸松浦氏の侵攻により、佐志方城が松浦家臣・佐志方氏の支配下に入った。針尾氏は針尾島に追い詰められる。"

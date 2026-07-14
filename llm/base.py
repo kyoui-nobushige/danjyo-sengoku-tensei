@@ -13,3 +13,6 @@ class BaseLLM(ABC):
     def chat(self, system_prompt: str, messages: list[LLMMessage]) -> str:
         """system_promptとメッセージ履歴を受け取り、応答テキストを返す"""
         ...
+
+    def chat_stream(self, system_prompt: str, messages: list[LLMMessage]):
+        yield self.chat(system_prompt, messages)

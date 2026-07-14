@@ -17,3 +17,13 @@ class AnthropicLLM(BaseLLM):
             messages=[{"role": m.role, "content": m.content} for m in messages],
         )
         return response.content[0].text
+
+    def chat_stream(self, system_prompt: str, messages: list[LLMMessage]):
+        with self.client.messages.stream(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            system=system_prompt,
+            messages=[{"role": m.role, "content": m.content} for m in messages],
+        ) as stream:
+            for text in stream.text_stream:
+                yield text

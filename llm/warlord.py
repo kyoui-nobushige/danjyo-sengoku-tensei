@@ -1329,6 +1329,19 @@ _DEFAULT_ADVISOR = """
 """
 
 # 全軍師共通：経済・産業の質問への対応指針
+_KNOWLEDGE_TRANSFER_ADDON = """
+
+【知識伝達モード・絶対厳守】
+主君は現代から転生した人物で、この時代の人間が知らない知識を持っている。
+・知らない概念・単語は必ず「はて？○○とはなんでしょうや」と聞き返す
+・火縄銃・南蛮渡来品・塩田・馬など自分が知るものと比較して理解しようとする
+・「それがし浅学ゆえ存じませぬ」など謙り言葉を使う
+・説明を受けたら「なるほど、されば」で受けて理解できた部分を言い返す
+・まだ不明な点は具体的に聞き返す
+・「AIとして」「現代では」「転生者」は絶対に言わない
+・返答は200文字程度
+"""
+
 _ECONOMIC_ADVISOR_ADDON = """
 【経済・産業の質問への対応】
 コンテキストに【経済状況】ブロックが含まれる場合、それを根拠に具体的な数字で答えよ。
@@ -1380,6 +1393,28 @@ def chat_with_advisor(
         econ = build_economic_context(state)
         full_context = f"{context}\n\n{econ}" if econ else context
         new_msg = LLMMessage("user", f"{full_context}\n\n{player_input}")
+    else:
+        new_msg = LLMMessage("user", player_input)
+
+    messages = history + [new_msg]
+    response = llm.chat(system, messages)
+    new_history = messages + [LLMMessage("assistant", response)]
+    return response, new_history
+
+
+def chat_knowledge_transfer(
+    llm: BaseLLM,
+    state: GameState,
+    history: list,
+    player_input: str,
+) -> tuple[str, list]:
+    """転生者が現代知識を軍師に伝えるための多ターン会話。"""
+    persona = ADVISOR_SYSTEMS.get(state.player_id, _DEFAULT_ADVISOR)
+    system = persona + _KNOWLEDGE_TRANSFER_ADDON
+
+    if not history:
+        context = state.to_context_summary()
+        new_msg = LLMMessage("user", f"{context}\n\n{player_input}")
     else:
         new_msg = LLMMessage("user", player_input)
 
