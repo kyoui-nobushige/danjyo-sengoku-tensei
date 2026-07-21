@@ -24,6 +24,9 @@ AIが武将・軍師として考え、喋り、動く。
 バグ報告・感想は GitHub の Issues へお願いします。  
 https://github.com/kyoui-nobushige/danjyo-sengoku-tensei
 
+制作者への連絡先（GitHubアカウントをお持ちでない方）：  
+private20060127@gmail.com
+
 ---
 
 ## 動作環境

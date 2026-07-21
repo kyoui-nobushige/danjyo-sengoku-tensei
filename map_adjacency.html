@@ -167,7 +167,7 @@ const castles = {
   matsutake: { name:"松岳城", koku:0.53, lat:33.0521, lng:129.914, owner:"ureyashino" },
   ariojo: { name:"蟻尾城", koku:0.53, lat:33.0908, lng:130.0757, owner:"omura" },
   takezakijo: { name:"竹崎城", koku:0.53, lat:32.9567, lng:130.2236, owner:"arima" },
-  omurajo: { name:"大村館", koku:1.43, lat:32.9149, lng:129.9643, owner:"omura" },
+  omurajo: { name:"大村館", koku:1.43, lat:32.915, lng:129.9635, owner:"omura" },
   tsunomijo: { name:"唾飲城", koku:0.53, lat:32.834, lng:129.8677, owner:"omura" },
   kosazajo: { name:"小佐々城", koku:0.044, lat:32.9727, lng:129.6492, owner:"kosaza" },
   inakajo: { name:"平島城", koku:0.001, lat:33.0012, lng:129.2404, owner:"kosaza" },
@@ -665,7 +665,7 @@ function syncCastlesToServer() {
     fetch('/api/save_map', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ castles }),
+      body: JSON.stringify({ castles, edited_ids: Array.from(sessionEditedIds) }),
     }).then(r => r.json()).then(res => {
       if (res.added && res.added.length) {
         showToast(`${res.added.length}件を本物の城として保存しました`);
@@ -673,8 +673,20 @@ function syncCastlesToServer() {
       if (res.updated && res.updated.length) {
         showToast(`${res.updated.length}件をhizen_1560.jsonへ保存しました`);
       }
+      forceRefreshMapState();
     }).catch(() => showToast('サーバー保存に失敗（ゲーム起動中に地図を開いていますか？）'));
   }, 400);
+}
+
+// 編集直後、ターン経過を待たずに規模ランク等の表示を即時反映する
+async function forceRefreshMapState() {
+  try {
+    const res = await fetch('map_state.json?_=' + Date.now());
+    if (!res.ok) return;
+    const data = await res.json();
+    _lastTurn = data.turn;
+    applyMapState(data);
+  } catch(e) {}
 }
 
 // マーカー描画
@@ -957,6 +969,7 @@ document.getElementById('addBaseForm').addEventListener('submit', (e) => {
   };
   const bases = getCustomBases(); bases.push(base); saveCustomBasesData(bases);
   renderCustomBase(base);
+  sessionEditedIds.add(base.id);
   document.getElementById('addBaseModal').style.display = 'none';
   document.getElementById('newBaseName').value = '';
   showToast(`${name} を追加しました`);
@@ -1131,13 +1144,15 @@ function applyMapState(data) {
     const rankLabel = info.rank ? `  規模Lv.${info.rank}` : '';
     markers[id].setTooltipContent(`${name}  ${kokuStr}${rankLabel}`);
     const portLabel = info.port_tier > 0 ? ` | 港${info.port_tier}` : '';
+    const parentId = edited ? castles[id].parent_castle : info.parent_castle;
+    const parentLabel = parentId ? `<br>所属城: ${castles[parentId]?.name || parentId}` : '';
     if (!markers[id].isPopupOpen()) {
       markers[id].setPopupContent(buildPopupContent(id,
         `<b>${name}</b>`,
         `<br><span style="font-size:11px;color:#555">` +
         `勢力: ${ownerNames[owner] || owner}<br>` +
         `兵力: ${info.troops.toLocaleString()} | 石高: ${kokuStr}${portLabel}` +
-        (info.rank ? ` | 規模Lv.${info.rank}` : '') + `</span>`
+        (info.rank ? ` | 規模Lv.${info.rank}` : '') + parentLabel + `</span>`
       ), { minWidth: 210 });
     }
   }

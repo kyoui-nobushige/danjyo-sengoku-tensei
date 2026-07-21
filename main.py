@@ -11,6 +11,8 @@ import webbrowser
 
 _map_server = None
 _MAP_PORT = 8765
+_live_state = None     # 実行中ゲームプロセスのGameState（地図編集を即時反映するため）
+_live_map_json = None  # map_state.json の書き出し先パス
 
 # 拠点1つ分の初期値（地図の拠点追加フォームでは石高・兵力を入力しないため）
 _NEW_BASE_DEFAULTS = {
@@ -86,8 +88,14 @@ def _rewrite_castles_block(game_dir: str, castles: dict) -> None:
         f.write(html)
 
 
-def _save_map_edit(game_dir: str, castles: dict) -> dict:
-    """ブラウザ地図から送られた拠点データを hizen_1560.json / custom_adjacency.json / map_adjacency.html へ反映する。"""
+def _save_map_edit(game_dir: str, castles: dict, edited_ids: set) -> dict:
+    """ブラウザ地図から送られた拠点データを hizen_1560.json / custom_adjacency.json / map_adjacency.html へ反映する。
+
+    このセッションで実際に編集・追加された拠点（edited_ids）以外は、hizen_1560.json側を
+    書き換えない。syncCastlesToServer()はブラウザが保持する全拠点を毎回送ってくるため、
+    ここでフィルタしないと「無関係な城をドラッグしただけ」で他城のparent_castle等が
+    ブラウザ側の古いキャッシュ値で誤って上書き・削除されてしまう。
+    """
     scenario_path = _scenario_path(game_dir)
     with open(scenario_path, encoding="utf-8") as f:
         data = json.load(f)
@@ -98,7 +106,10 @@ def _save_map_edit(game_dir: str, castles: dict) -> dict:
 
     added = []
     updated = []
+    final_entries: dict[str, dict] = {}
     for cid, c in castles.items():
+        if cid not in edited_ids:
+            continue
         if cid in existing_ids:
             entry = existing_by_id[cid]
             changed = False
@@ -133,6 +144,7 @@ def _save_map_edit(game_dir: str, castles: dict) -> dict:
 
             if changed:
                 updated.append(cid)
+            final_entries[cid] = entry
             continue
 
         base_type = c.get("base_type") or "castle"
@@ -155,6 +167,7 @@ def _save_map_edit(game_dir: str, castles: dict) -> dict:
             entry["parent_castle"] = c["parent_castle"]
         data["territories"].append(entry)
         added.append(cid)
+        final_entries[cid] = entry
 
         parent = c.get("parent_castle")
         neighbors = set()
@@ -169,9 +182,41 @@ def _save_map_edit(game_dir: str, castles: dict) -> dict:
         with open(scenario_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
             f.write("\n")
+        _sync_live_state(final_entries)
 
     _rewrite_castles_block(game_dir, castles)
     return {"added": added, "updated": updated}
+
+
+def _sync_live_state(final_entries: dict) -> None:
+    """地図編集の内容を、実行中ゲームプロセスのGameStateにも即時反映してmap_state.jsonを再生成する。
+    これをしないと、規模ランク（scale_rank）は次のターン経過まで編集前の値のまま表示され続ける。"""
+    if _live_state is None:
+        return
+    from engine.game_state import Territory, write_map_state
+    for cid, entry in final_entries.items():
+        t = _live_state.territories.get(cid)
+        if t is not None:
+            t.name = entry["name"]
+            t.owner = entry["owner"]
+            t.koku = entry["koku"]
+            t.port_tier = entry.get("port_tier", 0)
+            t.base_type = entry.get("base_type", "castle")
+            t.parent_castle = entry.get("parent_castle", "")
+        else:
+            _live_state.territories[cid] = Territory(
+                id=cid,
+                name=entry["name"],
+                owner=entry["owner"],
+                troops=entry["troops"],
+                koku=entry["koku"],
+                fortification=entry.get("fortification", 1),
+                port_tier=entry.get("port_tier", 0),
+                base_type=entry.get("base_type", "castle"),
+                parent_castle=entry.get("parent_castle", ""),
+            )
+    if _live_map_json:
+        write_map_state(_live_state, _live_map_json)
 
 
 class _MapRequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -186,8 +231,10 @@ class _MapRequestHandler(http.server.SimpleHTTPRequestHandler):
         try:
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length)
-            castles = json.loads(body).get("castles", {})
-            result = _save_map_edit(os.getcwd(), castles)
+            payload = json.loads(body)
+            castles = payload.get("castles", {})
+            edited_ids = set(payload.get("edited_ids", []))
+            result = _save_map_edit(os.getcwd(), castles, edited_ids)
             resp = json.dumps({"ok": True, "added": result["added"], "updated": result["updated"]}).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -203,9 +250,11 @@ class _MapRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(resp)
 
 
-def _start_map_server(directory: str) -> None:
+def _start_map_server(directory: str, state=None, map_json: str = None) -> None:
     """map_adjacency.html 用のローカルHTTPサーバーをバックグラウンドで起動する。"""
-    global _map_server
+    global _map_server, _live_state, _live_map_json
+    _live_state = state
+    _live_map_json = map_json
     if _map_server is not None:
         return
     os.chdir(directory)
@@ -497,7 +546,7 @@ def main() -> None:
                 game_dir = os.path.dirname(os.path.abspath(__file__))
                 map_json = os.path.join(game_dir, "map_state.json")
                 write_map_state(state, map_json)
-                _start_map_server(game_dir)
+                _start_map_server(game_dir, state, map_json)
                 webbrowser.open(f"http://127.0.0.1:{_MAP_PORT}/map_adjacency.html")
                 cli.show_message("地図をブラウザで開きました。以降は自動更新されます。", "cyan")
                 continue
