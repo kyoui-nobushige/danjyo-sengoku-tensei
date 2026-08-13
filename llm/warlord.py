@@ -1424,6 +1424,28 @@ def chat_knowledge_transfer(
     return response, new_history
 
 
+def chat_knowledge_transfer_stream(
+    llm: BaseLLM,
+    state: GameState,
+    history: list,
+    player_input: str,
+):
+    """chat_knowledge_transferのストリーミング版。呼び出し側でチャンクを消費し、
+    得られた全文からnew_historyをmessages + [assistant応答]として組み立てる。"""
+    persona = ADVISOR_SYSTEMS.get(state.player_id, _DEFAULT_ADVISOR)
+    system = persona + _KNOWLEDGE_TRANSFER_ADDON
+
+    if not history:
+        context = state.to_context_summary()
+        new_msg = LLMMessage("user", f"{context}\n\n{player_input}")
+    else:
+        new_msg = LLMMessage("user", player_input)
+
+    messages = history + [new_msg]
+    chunks = llm.chat_stream(system, messages)
+    return chunks, messages
+
+
 # ── 戦況報告（戦闘フェーズ中の軍師報告） ─────────────────────────
 
 BATTLE_REPORT_TEMPLATE = """{advisor_system}

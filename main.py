@@ -373,7 +373,7 @@ def main() -> None:
     from engine.turn_manager import run_ai_turns
     from llm.warlord import (
         get_diplomacy_response, get_advisor_advice, chat_with_advisor,
-        chat_knowledge_transfer,
+        chat_knowledge_transfer_stream,
         get_battle_report, ADVISOR_NAMES, WarlordDiplomacyResponse,
     )
     from llm.base import LLMMessage
@@ -593,13 +593,14 @@ def main() -> None:
                         break
                     cli.show_message("考えています...", "dim")
                     try:
-                        response, _know_history = chat_knowledge_transfer(
+                        chunks, sent_messages = chat_knowledge_transfer_stream(
                             llm, state, _know_history, player_input
                         )
+                        response = cli.show_advisor_stream(chunks, advisor_name)
                     except Exception as e:
                         _handle_llm_error(e, cli)
                         break
-                    cli.show_advisor_advice(response, advisor_name)
+                    _know_history = sent_messages + [LLMMessage("assistant", response)]
                 continue
 
             # ─ 内政 ──────────────────────────────────────────────

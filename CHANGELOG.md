@@ -1,5 +1,13 @@
 ﻿## 変更履歴
 
+### 2026-08-14 知識伝達モード（Kコマンド）をストリーミング表示に配線
+
+- 2026-07-14に追加済みだった`chat_stream()`（`llm/base.py`/`llm/anthropic_llm.py`）・`show_advisor_stream()`（`ui/cli.py`）が未配線のまま残っていたのを接続
+- `llm/warlord.py`に`chat_knowledge_transfer_stream()`を新規追加（既存の`chat_knowledge_transfer()`は変更せず並存）。system/messages組み立ては共通で、`llm.chat()`ではなく`llm.chat_stream()`を呼ぶ点のみ異なる
+- `main.py`のKコマンド処理を`chat_knowledge_transfer_stream`＋`cli.show_advisor_stream`呼び出しに変更
+- `chat_stream()`は`llm/base.py`にデフォルト実装（`yield self.chat(...)`で1回だけ返す）があるため全プロバイダで動作する。ただし本当の1文字ずつ表示になるのはAnthropic（Claude API）のみで、Gemini/LMStudio/Ollama/agentは従来通り一括表示（表示形式のみPanel枠なしに変化）
+- 未対応: Gemini/LMStudio/Ollama側への真のストリーミング実装は今回対象外
+
 ### 2026-07-28 初心者向けセットアップ導線を追加（setup.bat新設・README判断チャート・トラブルシューティング）
 
 - 課題: README.mdの導入手順（Pythonインストール→config.py作成→LLMプロバイダ選択）が一般ユーザーには敷居が高いとの指摘。「ユーザー自身がLLM/APIを用意する」設計自体（開発者側が推論コストを負担しないための意図的設計）は維持したまま、手順の分かりやすさ・自動化のみ改善
