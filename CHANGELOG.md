@@ -1,5 +1,15 @@
 ﻿## 変更履歴
 
+### 2026-07-28 初心者向けセットアップ導線を追加（setup.bat新設・README判断チャート・トラブルシューティング）
+
+- 課題: README.mdの導入手順（Pythonインストール→config.py作成→LLMプロバイダ選択）が一般ユーザーには敷居が高いとの指摘。「ユーザー自身がLLM/APIを用意する」設計自体（開発者側が推論コストを負担しないための意図的設計）は維持したまま、手順の分かりやすさ・自動化のみ改善
+- `setup.bat`を新規作成。`config.py`が既に存在する場合は上書きせず、存在しない場合のみ`config.example.py`からコピー→`pip install -r requirements.txt`を実行→完了メッセージ表示→`pause`で終了確認、という一連の流れをダブルクリックのみで完結させる仕様
+  - 既存の`start.bat`/`起動.bat`/`弾正戦国転生記.bat`の慣習（`chcp`不使用・`@echo off`→`cd /d "%~dp0"`→`pause`）に合わせて`chcp`は使用していない。ただし既存.batはいずれもファイル内に日本語echo文を持たない前例のみだったため、UTF-8保存(Write/Edit)とWindows既定コンソール(cp932)の不一致による文字化けリスク（過去のcp932/UTF-8混在事故の教訓）を踏まえ、`setup.bat`内の表示メッセージは英語のみで構成し、文字化けリスク自体を回避する設計とした
+- README.mdに「## セットアップ前に：あなたに合ったAIの選び方」セクションを新設（`## 動作環境`と`## セットアップ手順`の間）。GPU有無・無料/課金志向に応じた3択（①ローカルLLM/②Gemini API/③Claude API）の早見表と、`setup.bat`実行を促す一言を追加
+  - 各選択肢から該当セクションへのリンクは、GitHubの自動アンカースラッグ生成（全角括弧を含む見出しでの挙動が不確実）に依存せず、`① ローカルLLM（...）`等の見出し直前に`<a id="local-llm-section"></a>`等の明示アンカーを追加する方式で実装（`gemini-section`/`claude-section`も同様）
+- README.md末尾側、ステップ6（ゲーム起動）の後・APIキー管理セクションの前に「## トラブルシューティング（よくある質問）」を新設。`pip install`失敗時の対処（Pythonバージョン/pip更新/パス）、`'python' is not recognized`エラーの対処（PATH追加）、LMStudioサーバー未起動、APIキー未設定エラー、`setup.bat`失敗時の手動対処を掲載
+- 変更範囲はREADME.md編集と`setup.bat`新規追加のみ。`config.py`/`config.example.py`の中身・`LLM_PROVIDER`のデフォルト値・既存データファイル（`hizen_1560.json`等）には一切触れていない
+
 ### 2026-07-14 転生者知識伝達モード（Kコマンド）を追加
 
 - 評定画面に「K」コマンドを追加。主君（転生者）が現代の知識を軍師に伝えるための専用の多ターン会話ループを実装（`main.py`のaction=="k"分岐、`ui/cli.py`の`get_knowledge_input()`、`llm/warlord.py`の`chat_knowledge_transfer()`）

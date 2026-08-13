@@ -37,6 +37,22 @@ private20060127@gmail.com
 
 ---
 
+## セットアップ前に：あなたに合ったAIの選び方
+
+このゲームはAI（LLM）が武将・軍師のセリフを生成します。使うAIによって「無料か有料か」「品質」「必要なPC性能」が変わるため、プレイ前に以下から自分に合ったものを選んでください。
+
+**まず、ゲームフォルダ内の `setup.bat` をダブルクリックしてください。** `config.py` の作成（`config.example.py` からのコピー）と、必要なライブラリのインストールが自動で行われます。そのあと、下の表を参考に `config.py` を編集してください。
+
+| あなたの状況 | おすすめ | 手順へのリンク |
+|---|---|---|
+| GPU（VRAM 8GB以上）を持っている | ① ローカルLLM（LMStudio・完全無料） | [→ ①の手順へ](#local-llm-section) |
+| GPUはないが、無料で始めたい | ② Gemini API（無料枠あり） | [→ ②の手順へ](#gemini-section) |
+| 品質最優先で、課金しても構わない | ③ Claude API（有料・最高品質） | [→ ③の手順へ](#claude-section) |
+
+迷ったら②（Gemini API）が無料かつ手軽なのでおすすめです。うまくいかない場合は[トラブルシューティング](#troubleshooting-section)もご覧ください。
+
+---
+
 ## セットアップ手順
 
 ### ステップ1：Pythonをインストールする
@@ -87,7 +103,7 @@ copy config.example.py config.py
 
 ---
 
-#### ① ローカルLLM（完全無料・API不要・インターネット接続不要）
+#### <a id="local-llm-section"></a>① ローカルLLM（完全無料・API不要・インターネット接続不要）
 
 自分のPC上でAIを動かす方法です。APIキーもお金も不要です。
 
@@ -113,7 +129,7 @@ copy config.example.py config.py
 
 ---
 
-#### ② Gemini API（無料枠あり・Googleアカウント必要）
+#### <a id="gemini-section"></a>② Gemini API（無料枠あり・Googleアカウント必要）
 
 GoogleのAIサービスです。無料枠の範囲でプレイできます。
 
@@ -142,7 +158,7 @@ GoogleのAIサービスです。無料枠の範囲でプレイできます。
 
 ---
 
-#### ③ Claude API（有料・最高品質）
+#### <a id="claude-section"></a>③ Claude API（有料・最高品質）
 
 AnthropicのAIサービスです。武将のキャラクター・戦国口調・戦略的思考の品質が最も高いです。
 
@@ -195,6 +211,51 @@ python main.py
 ```
 
 または、ゲームフォルダ内の `start.bat` をダブルクリックしても起動できます。
+
+---
+
+## <a id="troubleshooting-section"></a>トラブルシューティング（よくある質問）
+
+### Q. `pip install` が失敗する
+
+- **原因1：Pythonのバージョンが古い（3.10未満）**
+  `python --version` で確認し、3.10未満なら[Python公式サイト](https://www.python.org/downloads/)から最新版を入れ直してください。
+- **原因2：pip自体が古い**
+  以下を実行してpipを更新してから、再度 `pip install -r requirements.txt` を試してください。
+  ```
+  python -m pip install --upgrade pip
+  ```
+- **原因3：ゲームフォルダのパスに問題がある**
+  日本語やスペースを含む長いパスで失敗する場合、`C:\Games\danjyo\` のような短い英数字パスに置き直すと解消することがあります。
+
+### Q. `'python' is not recognized as an internal or external command` と表示される
+
+Pythonインストール時に「PATHへの追加」にチェックが入っておらず、Windowsが `python` コマンドの場所を認識できていない状態です。
+
+- **対処法1（推奨）：Pythonを入れ直す**
+  [Python公式サイト](https://www.python.org/downloads/)からインストーラーを再実行し、最初の画面で **「Add python.exe to PATH」に必ずチェックを入れて**再インストールしてください。
+- **対処法2：PATHを手動で追加する**
+  Windowsの「システム環境変数の編集」→「環境変数」→「Path」に、Pythonのインストール先フォルダ（例：`C:\Users\ユーザー名\AppData\Local\Programs\Python\Python312\`）を追加してください。
+
+### Q. ローカルLLM（LMStudio）を選んだのに、ゲームが固まる・エラーになる
+
+LMStudioの「Local Server」が起動していない可能性があります。LMStudio左メニューの「Local Server」で、ポート `1234` のサーバーが起動中（Start Serverを押した状態）になっているか確認してください。ゲームより先にLMStudioのサーバーを起動しておく必要があります。
+
+### Q. Gemini API / Claude APIを選んだのに、エラーになる
+
+`config.py` の `GEMINI_API_KEY` または `ANTHROPIC_API_KEY` が空欄のまま、または `LLM_PROVIDER` の設定と食い違っている可能性があります。以下を確認してください。
+
+- 使いたいAPIに対応するキーが正しく貼り付けられているか（前後に余計な空白・引用符のミスがないか）
+- `LLM_PROVIDER` がそのAPIに対応する値（`"gemini"` または `"anthropic"`）になっているか
+
+### Q. `setup.bat` を実行してもうまくいかない
+
+`setup.bat` は内部で `config.example.py` のコピーと `pip install -r requirements.txt` を実行しているだけです。エラーが出た場合は、上記の `pip install` に関する対処法を確認するか、コマンドプロンプトを開いて手動で以下を実行し、表示されるエラーメッセージを確認してください。
+
+```
+cd ゲームフォルダのパス
+pip install -r requirements.txt
+```
 
 ---
 
