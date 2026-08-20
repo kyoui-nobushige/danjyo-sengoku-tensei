@@ -336,7 +336,7 @@ def _check_skip_interrupt(state, prev_terrs: set, prev_rels: dict) -> tuple[bool
             return True, f"{w.name}から外交の使者が参りました（{prev:+d}→{curr:+d}）"
 
     # 兵糧危機
-    if player.food < 0:
+    if player.food_deficit:
         return True, "兵糧が尽きました！早急に手を打つ必要があります。"
 
     # 使者が来ている
@@ -506,10 +506,8 @@ def main() -> None:
                 )
                 if response == "accept":
                     state.change_relation(state.player_id, offer["from_id"], offer["relation_delta"])
-                    state.change_relation(offer["from_id"], state.player_id, offer["relation_delta"])
                 elif response == "reject":
                     state.change_relation(state.player_id, offer["from_id"], -10)
-                    state.change_relation(offer["from_id"], state.player_id, -10)
                 # "ignore" は変化なし
 
             # ─ 状況表示 ──────────────────────────────────────────

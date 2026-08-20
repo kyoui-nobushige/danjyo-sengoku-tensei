@@ -19,3 +19,24 @@ class OllamaLLM(BaseLLM):
         resp = requests.post(f"{self.base_url}/api/chat", json=payload, timeout=120)
         resp.raise_for_status()
         return resp.json()["message"]["content"]
+
+    def chat_stream(self, system_prompt: str, messages: list[LLMMessage]):
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "system", "content": system_prompt}]
+            + [{"role": m.role, "content": m.content} for m in messages],
+            "stream": True,
+        }
+        with requests.post(f"{self.base_url}/api/chat", json=payload, timeout=120, stream=True) as resp:
+            resp.raise_for_status()
+            for line in resp.iter_lines(decode_unicode=True):
+                if not line:
+                    continue
+                chunk = json.loads(line)
+                if chunk.get("error"):
+                    raise RuntimeError(f"Ollama stream error: {chunk['error']}")
+                text = chunk.get("message", {}).get("content")
+                if text:
+                    yield text
+                if chunk.get("done"):
+                    break

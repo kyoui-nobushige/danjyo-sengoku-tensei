@@ -109,6 +109,7 @@ class Warlord:
     gunners: int = 0    # 鉄砲兵数
     salt_stock: float = 0.0  # 塩備蓄（石）流下式塩田の産出物・交易コマンドで売却
     start_hint: str = ""  # 転生者ヒント（シナリオJSONから。空なら非表示）
+    food_deficit: bool = False  # 直近のadvance_turnで兵糧が0を割り込んだか（表示専用・保存不要）
 
     def relation_label(self, target_id: str) -> str:
         if target_id in self.bond_types:
@@ -293,6 +294,7 @@ class GameState:
             if w.is_defeated:
                 continue
             inc = self._calc_income(wid, total_koku_map)
+            w.food_deficit = (w.food + inc["food_net"]) < 0
             new_food = max(0, w.food + inc["food_net"])
             max_food = int(sum(
                 (0.0 if self.is_absorbed_child(t) else total_koku_map.get(t.id, t.koku))

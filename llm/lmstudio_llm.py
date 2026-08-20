@@ -1,4 +1,5 @@
 import requests
+import json
 from llm.base import BaseLLM, LLMMessage
 import config
 
@@ -24,3 +25,31 @@ class LMStudioLLM(BaseLLM):
         )
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"]
+
+    def chat_stream(self, system_prompt: str, messages: list[LLMMessage]):
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "system", "content": system_prompt}]
+            + [{"role": m.role, "content": m.content} for m in messages],
+            "temperature": 0.7,
+            "max_tokens": config.ANTHROPIC_MAX_TOKENS,
+            "stream": True,
+        }
+        with requests.post(
+            f"{self.base_url}/v1/chat/completions",
+            json=payload,
+            timeout=180,
+            stream=True,
+        ) as resp:
+            resp.raise_for_status()
+            for line in resp.iter_lines(decode_unicode=True):
+                if not line or not line.startswith("data: "):
+                    continue
+                data = line[len("data: "):]
+                if data == "[DONE]":
+                    break
+                chunk = json.loads(data)
+                delta = chunk["choices"][0].get("delta", {})
+                text = delta.get("content")
+                if text:
+                    yield text

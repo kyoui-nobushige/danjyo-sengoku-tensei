@@ -1,5 +1,15 @@
 ﻿## 変更履歴
 
+### 2026-08-20 Gemini/LMStudio/Ollamaの真のストリーミング実装＋既知バグ2件修正（ユーザー離席中の自動作業）
+
+- 未対応: Gemini/LMStudio/Ollama側への真のストリーミング実装（2026-08-14CHANGELOG記載）を実装。`llm/gemini_llm.py`（`generate_content_stream`）・`llm/lmstudio_llm.py`（OpenAI互換SSE）・`llm/ollama_llm.py`（ネイティブstream）に`chat_stream()`を追加。呼び出し側（`llm/warlord.py`の`chat_knowledge_transfer_stream`）は既に汎用実装済みのため変更不要
+- Codex CLIレビューで3点指摘を受け反映：①LMStudio/Ollamaのレスポンスをcontext managerで確実にclose（例外・generator途中破棄時のリーク防止）②Ollamaが200 OKでエラーJSON（`{"error": ...}`）を返すケースを検知して例外化③Geminiのstreamオブジェクトをfinallyでclose
+- 実行時検証：`load_scenario`でシナリオ読込→`advance_turn()`を6ターン実行しエラー無しを確認（ストリーミング自体はAPIキー未設定のためこのセッションでは疎通確認まで。ロジック面は上記コードレビュー＋静的検証のみ）
+- バグ修正①：`main.py`の使者応答（受諾/拒絶）処理で`change_relation()`を2回呼んでおり、対称更新のメソッドと合わせて関係値変化が表示値の2倍になっていた（例：+8表示なのに実際は+16）。2回目の呼び出しを削除
+- バグ修正②：スキップモード中の兵糧危機の中断判定（`main.py`の`_check_skip_interrupt`）が`player.food < 0`を見ていたが、`advance_turn()`側で`new_food = max(0, ...)`により`food`が常に0以上へクランプされるため、この分岐が構造的に常にFalseで兵糧危機の急報が一切発生しないデッドコードだった。`Warlord`に`food_deficit`フラグ（保存不要・表示専用）を追加し、クランプ前に判定してセットする方式に変更
+- 両バグとも `general-purpose`系Exploreエージェントによるコード全体の棚卸しで発見（読み取り専用で調査させ、修正はメインセッション側で実施・裏取り後に反映）
+- セーブファイル・データファイル(.json等)は今回変更していない。config.pyのLLM_PROVIDERデフォルト値も変更していない
+
 ### 2026-08-14 知識伝達モード（Kコマンド）をストリーミング表示に配線
 
 - 2026-07-14に追加済みだった`chat_stream()`（`llm/base.py`/`llm/anthropic_llm.py`）・`show_advisor_stream()`（`ui/cli.py`）が未配線のまま残っていたのを接続
