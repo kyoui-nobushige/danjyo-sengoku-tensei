@@ -262,30 +262,6 @@ def _start_map_server(directory: str, state=None, map_json: str = None) -> None:
     t = threading.Thread(target=_map_server.serve_forever, daemon=True)
     t.start()
 
-# ── LLM ファクトリ ────────────────────────────────────────────────
-
-def create_llm():
-    import config
-    from ui.cli import choose_llm_provider
-    provider = choose_llm_provider()
-    config.LLM_PROVIDER = provider
-
-    if provider == "anthropic":
-        from llm.anthropic_llm import AnthropicLLM
-        return AnthropicLLM()
-    elif provider == "gemini":
-        from llm.gemini_llm import GeminiLLM
-        return GeminiLLM()
-    elif provider == "lmstudio":
-        from llm.lmstudio_llm import LMStudioLLM
-        return LMStudioLLM()
-    elif provider == "ollama":
-        from llm.ollama_llm import OllamaLLM
-        return OllamaLLM()
-    else:
-        raise ValueError(f"未知のLLMプロバイダ: {config.LLM_PROVIDER}")
-
-
 # ── ゲームループ ──────────────────────────────────────────────────
 
 def _handle_llm_error(e: Exception, cli) -> bool:

@@ -1,5 +1,14 @@
 ﻿## 変更履歴
 
+### 2026-08-20② 第2弾コードレビューでバグ3件発見・修正（ユーザー離席中の自動作業）
+
+- バグ修正③（高優先度）：`engine/combat.py`の`get_hq_guard_troops()`が「総兵力の6%、最低300人」で本陣護衛兵力を計算していたが、下限300が実際の総兵力を上回るケース（`hizen_1560.json`には兵力3〜10人の小領地が多数存在）で、実在しない兵力が防御側に発生し本陣強襲の戦力比計算が実態と乖離していた。`min(..., total_troops)`でクランプし実兵力を超えないよう修正
+- バグ修正④（中優先度）：`engine/industry.py`の`can_build()`が「建設中」判定を`under_construction == ind.id`（同一産業IDのみ）で行っていたため、領地で別の産業が建設中でも他の産業が「建設可能」とUI表示されてしまっていた（実行時は`main.py`側で弾かれ金銭損失は無いが表示と実行結果が不整合）。`under_construction`が空文字でなければ常に不可、に修正
+- 軽微整理：`main.py`の`create_llm()`と`ui/cli.py`の`choose_llm_provider()`は実行フロー上どこからも呼ばれていないデッドコード（実際のLLM選択は`main.py`内の`_pick_llm`が担っている）と判明したため削除
+- 上記3件は`general-purpose`系Exploreエージェントによる第2弾棚卸し（combat.py/diplomacy.py/industry.py/cli.py/history_context.py/agent_llm.py/main.py残部を対象）で発見。読み取り専用で調査させ、メインセッション側で該当箇所を裏取りしてから修正・実行時検証（`get_hq_guard_troops`の入出力・`can_build`の判定結果を実データで確認）を行った
+- diplomacy.py・history_context.py・agent_llm.pyは今回のレビューで重大なバグなしと判断
+- セーブファイル・データファイル(.json等)は今回も変更していない
+
 ### 2026-08-20 Gemini/LMStudio/Ollamaの真のストリーミング実装＋既知バグ2件修正（ユーザー離席中の自動作業）
 
 - 未対応: Gemini/LMStudio/Ollama側への真のストリーミング実装（2026-08-14CHANGELOG記載）を実装。`llm/gemini_llm.py`（`generate_content_stream`）・`llm/lmstudio_llm.py`（OpenAI互換SSE）・`llm/ollama_llm.py`（ネイティブstream）に`chat_stream()`を追加。呼び出し側（`llm/warlord.py`の`chat_knowledge_transfer_stream`）は既に汎用実装済みのため変更不要

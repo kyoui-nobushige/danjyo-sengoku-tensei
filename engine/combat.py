@@ -58,7 +58,7 @@ def calc_combat_power(troops: int, cavalry: int, gunners: int) -> float:
 HQ_GUARD_RATIO = 0.06   # 総兵力の6%が本陣護衛
 
 def get_hq_guard_troops(total_troops: int) -> int:
-    return max(int(total_troops * HQ_GUARD_RATIO), 300)
+    return min(max(int(total_troops * HQ_GUARD_RATIO), 300), total_troops)
 
 
 # 戦術ごとの本陣発覚率

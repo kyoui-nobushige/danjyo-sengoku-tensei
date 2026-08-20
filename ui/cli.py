@@ -31,32 +31,6 @@ def clear_screen() -> None:
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
-# ── LLM選択 ───────────────────────────────────────────────────────
-
-def choose_llm_provider() -> str:
-    console.print(Panel(
-        "[bold]使用するAIを選んでください[/bold]\n\n"
-        "  [1] [cyan]Claude[/cyan]   Anthropic APIキー必要・有料・最高品質\n"
-        "  [2] [green]Gemini[/green]   Google APIキー必要・無料枠あり\n"
-        "  [3] [dim]ローカル[/dim]  LM Studio使用・APIキー不要・完全無料\n\n"
-        "  [dim]APIキーの取得方法・費用目安は README.md を参照[/dim]",
-        title="[bold yellow]AI選択[/bold yellow]",
-        border_style="yellow",
-        padding=(1, 4),
-    ))
-    while True:
-        choice = _input("  選択 [1/2/3] > ")
-        if choice == "1":
-            console.print("  [cyan]Claude を使用します[/cyan]\n")
-            return "anthropic"
-        if choice == "2":
-            console.print("  [green]Gemini を使用します[/green]\n")
-            return "gemini"
-        if choice == "3":
-            console.print("  [dim]ローカル(LM Studio)を使用します[/dim]\n")
-            return "lmstudio"
-        console.print("  [red]1・2・3 のいずれかを入力してください[/red]")
-
 
 # ── タイトル ──────────────────────────────────────────────────────
 

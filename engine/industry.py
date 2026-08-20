@@ -186,7 +186,7 @@ def can_build(ind: IndustryDef, territory, player_industries: list[str]) -> tupl
     """建設可否を判定。(可否, 理由)を返す。"""
     if ind.id in territory.industries:
         return False, "すでに建設済み"
-    if getattr(territory, "under_construction", None) == ind.id:
+    if getattr(territory, "under_construction", ""):
         return False, "建設中"
     if ind.requires_coast and not getattr(territory, "is_coast", False):
         return False, "沿岸領地が必要"
